@@ -28,8 +28,9 @@ jobs:
               curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
               dep ensure
           fi
+
       - name: Test
-        run: go test -v -mod=vendor -covermode=count -coverprofile=coverage.out ./...
+        run: go test -v -covermode=count -coverprofile=coverage.out ./...
       #- name: Convert coverage to lcov
       #  uses: jandelgado/gcov2lcov-action@v1.0.0
       #  with:
