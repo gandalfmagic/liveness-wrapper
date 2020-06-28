@@ -30,8 +30,9 @@ jobs:
               curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
               dep ensure
           fi
+
       - name: Test
-        run: go test -v -mod=vendor -covermode=count -coverprofile=coverage.out ./...
+        run: go test -v -covermode=count -coverprofile=coverage.out ./...
       #- name: Convert coverage to lcov
       #  uses: jandelgado/gcov2lcov-action@v1.0.0
       #  with:
@@ -52,15 +53,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - name: Set up Ruby 2.5
-        uses: actions/setup-ruby@v1
-        with:
-          ruby-version: 2.5.x
-        id: ruby
-
-      - name: Install fpm
-        run: gem install --no-ri --no-rdoc fpm
-
       - name: Set up Go 1.14
         uses: actions/setup-go@v1
         with:
@@ -74,19 +66,9 @@ jobs:
         id: create-packages
         run: |
           make package
-          echo "##[set-output name=rpm;]$(ls -1 *.rpm)"
-          echo "##[set-output name=deb;]$(ls -1 *.deb)"
-      #- name: Upload artifacts, rpm package
-      #  uses: actions/upload-artifact@master
-      #  with:
-      #    name: rpm package
-      #    path: ./*.rpm
-
-      #- name: Upload artifacts, deb package
-      #  uses: actions/upload-artifact@master
-      #  with:
-      #    name: deb package
-      #    path: ./*.deb
+          echo "##[set-output name=amd64;]$(ls -1 *-amd64.tar.gz)"
+          echo "##[set-output name=arm;]$(ls -1 *-arm.tar.gz)"
+          echo "##[set-output name=arm64;]$(ls -1 *-arm64.tar.gz)"
 
       - name: Create Release
         if: github.event_name == 'push'
@@ -99,25 +81,39 @@ jobs:
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
-      - name: Upload Release Asset, deb package
+
+      - name: Upload Release Asset, amd64 package
         if: github.event_name == 'push'
-        id: upload-release-asset-deb
+        id: upload-release-asset-amd64
         uses: actions/upload-release-asset@v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: ${{ steps.create-packages.outputs.deb }}
-          asset_name: ${{ steps.create-packages.outputs.deb }}
-          asset_content_type: application/vnd.debian.binary-package
-      - name: Upload Release Asset, rpm package
+          asset_path: ${{ steps.create-packages.outputs.amd64 }}
+          asset_name: ${{ steps.create-packages.outputs.amd64 }}
+          asset_content_type: application/x-tgz
+
+      - name: Upload Release Asset, arm package
         if: github.event_name == 'push'
-        id: upload-release-asset-rpm
+        id: upload-release-asset-arm
         uses: actions/upload-release-asset@v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: ${{ steps.create-packages.outputs.rpm }}
-          asset_name: ${{ steps.create-packages.outputs.rpm }}
-          asset_content_type: application/x-rpm
+          asset_path: ${{ steps.create-packages.outputs.arm }}
+          asset_name: ${{ steps.create-packages.outputs.arm }}
+          asset_content_type: application/x-tgz
+
+      - name: Upload Release Asset, arm64 package
+        if: github.event_name == 'push'
+        id: upload-release-asset-arm64
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+          asset_path: ${{ steps.create-packages.outputs.arm64 }}
+          asset_name: ${{ steps.create-packages.outputs.arm64 }}
+          asset_content_type: application/x-tgz
