@@ -59,3 +59,27 @@ func Configure(prefix, level string) {
 	lumber.Level(logLvl)
 	lumber.Debug("logger configured to console output")
 }
+
+type LogInfoWriter struct{}
+
+func NewLogInfoWriter() *LogInfoWriter {
+	lw := &LogInfoWriter{}
+	return lw
+}
+
+func (lw LogInfoWriter) Write(p []byte) (n int, err error) {
+	lumber.Info(string(p))
+	return len(p), nil
+}
+
+type LogErrorWriter struct{}
+
+func NewLogErrorWriter() *LogErrorWriter {
+	lw := &LogErrorWriter{}
+	return lw
+}
+
+func (lw LogErrorWriter) Write(p []byte) (n int, err error) {
+	lumber.Error(string(p), nil)
+	return len(p), nil
+}
