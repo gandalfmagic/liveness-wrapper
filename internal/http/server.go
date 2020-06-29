@@ -135,6 +135,7 @@ func (s *server) do(contextDone <-chan struct{}) {
 		case <-timer.C:
 			logger.Debug("timer is expired")
 			isPingAlive = false
+			s.isAlive = isExternalAlive && isPingAlive
 			timer.Reset(s.pingInterval)
 		}
 	}
