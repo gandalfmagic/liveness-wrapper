@@ -43,11 +43,11 @@ func NewServer(ctx context.Context, addr string, pingInterval time.Duration) Ser
 		if s.isReady {
 			wr.WriteHeader(http.StatusOK)
 			_, _ = io.WriteString(wr, "Ready")
-			logger.Http(r, http.StatusOK)
+			logger.HttpDebug(r, http.StatusOK)
 		} else {
 			wr.WriteHeader(http.StatusServiceUnavailable)
 			_, _ = io.WriteString(wr, "Not ready")
-			logger.Http(r, http.StatusServiceUnavailable)
+			logger.HttpDebug(r, http.StatusServiceUnavailable)
 		}
 	})
 
@@ -58,11 +58,11 @@ func NewServer(ctx context.Context, addr string, pingInterval time.Duration) Ser
 		if s.isAlive {
 			wr.WriteHeader(http.StatusOK)
 			_, _ = io.WriteString(wr, "Service available")
-			logger.Http(r, http.StatusOK)
+			logger.HttpDebug(r, http.StatusOK)
 		} else {
 			wr.WriteHeader(http.StatusServiceUnavailable)
 			_, _ = io.WriteString(wr, "Service down")
-			logger.Http(r, http.StatusServiceUnavailable)
+			logger.HttpDebug(r, http.StatusServiceUnavailable)
 		}
 	})
 
@@ -75,7 +75,7 @@ func NewServer(ctx context.Context, addr string, pingInterval time.Duration) Ser
 
 		_, _ = io.WriteString(wr, "Pong")
 
-		logger.Http(r, http.StatusOK)
+		logger.HttpDebug(r, http.StatusOK)
 	})
 
 	mux.HandleFunc("/", func(wr http.ResponseWriter, r *http.Request) {
@@ -85,7 +85,7 @@ func NewServer(ctx context.Context, addr string, pingInterval time.Duration) Ser
 
 		_, _ = io.WriteString(wr, "Not Found")
 
-		logger.Http(r, http.StatusNotFound)
+		logger.HttpError(r, http.StatusNotFound)
 	})
 
 	s.server = &http.Server{
