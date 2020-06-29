@@ -86,6 +86,9 @@ func (p *wrapperHandler) run(runError chan<- error) {
 	// instantiate the new process ans starts it
 	cmd := exec.CommandContext(p.ctx, p.path, p.arg...)
 
+	cmd.Stdout = logger.NewLogInfoWriter()
+	cmd.Stderr = logger.NewLogErrorWriter()
+
 	err := cmd.Start()
 	if err != nil {
 		logger.Error("cannot start the process %s: %s", p.path, err)
