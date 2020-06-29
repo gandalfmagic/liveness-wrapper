@@ -34,8 +34,20 @@ func Debug(format string, v ...interface{}) {
 	lumber.Debug(format, v...)
 }
 
-func Http(r *http.Request, status int) {
+func HttpError(r *http.Request, status int) {
+	lumber.Error("%s %s \"%s\" %d \"%s\" \"%s\"", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent())
+}
+
+func HttpWarn(r *http.Request, status int) {
+	lumber.Warn("%s %s \"%s\" %d \"%s\" \"%s\"", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent())
+}
+
+func HttpInfo(r *http.Request, status int) {
 	lumber.Info("%s %s \"%s\" %d \"%s\" \"%s\"", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent())
+}
+
+func HttpDebug(r *http.Request, status int) {
+	lumber.Debug("%s %s \"%s\" %d \"%s\" \"%s\"", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent())
 }
 
 func Configure(prefix, level string) {
