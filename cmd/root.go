@@ -44,6 +44,8 @@ func init() {
 	RootCmd.PersistentFlags().BoolP("process-restart-always", "r", false, "always restart the process when it ends")
 	RootCmd.PersistentFlags().BoolP("process-restart-on-error", "e", false, "restart the process only when it fails")
 	RootCmd.PersistentFlags().StringSlice("process-args", nil, "comma separated list of process arguments")
+	RootCmd.PersistentFlags().Bool("process-hide-stdout", false, "Hide the stdout of the wrapped process from the logs")
+	RootCmd.PersistentFlags().Bool("process-hide-stderr", false, "Hide the stderr of the wrapped process from the logs")
 	RootCmd.PersistentFlags().StringP("server-address", "a", ":6060", "bind address")
 	RootCmd.PersistentFlags().DurationP("server-ping-timeout", "t", 10*time.Minute, "ping timeout")
 	RootCmd.PersistentFlags().String("log-level", "WARN", "Output level of logs (TRACE, DEBUG, INFO, WARN, ERROR, FATAL)")
@@ -57,6 +59,9 @@ func init() {
 	_ = viper.BindPFlag("process.restart-always", RootCmd.PersistentFlags().Lookup("process-restart-always"))
 	_ = viper.BindPFlag("process.restart-on-error", RootCmd.PersistentFlags().Lookup("process-restart-on-error"))
 	_ = viper.BindPFlag("process.args", RootCmd.PersistentFlags().Lookup("process-args"))
+	_ = viper.BindPFlag("process.hide-stdout", RootCmd.PersistentFlags().Lookup("process-hide-stdout"))
+	_ = viper.BindPFlag("process.hide-stderr", RootCmd.PersistentFlags().Lookup("process-hide-stderr"))
+
 	_ = viper.BindPFlag("server.address", RootCmd.PersistentFlags().Lookup("server-address"))
 	_ = viper.BindPFlag("server.ping-timeout", RootCmd.PersistentFlags().Lookup("server-ping-timeout"))
 	_ = viper.BindPFlag("log.level", RootCmd.PersistentFlags().Lookup("log-level"))
@@ -213,7 +218,8 @@ func run(_ *cobra.Command, _ []string) error {
 	updateAlive, serverDone := server.Start()
 
 	// start the wrapped process
-	process := system.NewWrapperHandler(ctx, getRestartMode(), viper.GetString("process.path"), viper.GetStringSlice("process.args")...)
+	process := system.NewWrapperHandler(ctx, getRestartMode(), viper.GetBool("process.hide-stdout"),
+		viper.GetBool("process.hide-stderr"), viper.GetString("process.path"), viper.GetStringSlice("process.args")...)
 	processStatus, processDone := process.Start()
 
 	done := do(processStatus, updateAlive)
