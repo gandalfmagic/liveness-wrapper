@@ -30,10 +30,12 @@ type WrapperHandler interface {
 }
 
 type wrapperHandler struct {
-	arg     []string
-	ctx     context.Context
-	path    string
-	restart WrapperRestartMode
+	arg        []string
+	ctx        context.Context
+	hideStdErr bool
+	hideStdOut bool
+	path       string
+	restart    WrapperRestartMode
 }
 
 // NewWrapperStatus creates a new process wrapper and returns it
@@ -47,13 +49,15 @@ type wrapperHandler struct {
 //   arg: a list of arguments for the process
 // Return values:
 //   system.WrapperHandler
-func NewWrapperHandler(ctx context.Context, restart WrapperRestartMode, path string, arg ...string) WrapperHandler {
+func NewWrapperHandler(ctx context.Context, restart WrapperRestartMode, hideStdOut, hideStdErr bool, path string, arg ...string) WrapperHandler {
 
 	p := &wrapperHandler{
-		arg:     arg,
-		ctx:     ctx,
-		path:    path,
-		restart: restart,
+		arg:        arg,
+		ctx:        ctx,
+		hideStdErr: hideStdErr,
+		hideStdOut: hideStdOut,
+		path:       path,
+		restart:    restart,
 	}
 
 	return p
@@ -86,8 +90,12 @@ func (p *wrapperHandler) run(runError chan<- error) {
 	// instantiate the new process ans starts it
 	cmd := exec.CommandContext(p.ctx, p.path, p.arg...)
 
-	cmd.Stdout = logger.NewLogInfoWriter("wrapped info")
-	cmd.Stderr = logger.NewLogInfoWriter("wrapped error")
+	if !p.hideStdOut {
+		cmd.Stdout = logger.NewLogInfoWriter("wrapped info")
+	}
+	if !p.hideStdErr {
+		cmd.Stderr = logger.NewLogInfoWriter("wrapped error")
+	}
 
 	err := cmd.Start()
 	if err != nil {
