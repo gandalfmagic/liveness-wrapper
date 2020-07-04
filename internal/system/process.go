@@ -26,7 +26,7 @@ const (
 )
 
 type WrapperHandler interface {
-	Start() (<-chan WrapperStatus, <-chan int)
+	Start(chan<- error) <-chan WrapperStatus
 }
 
 type wrapperHandler struct {
@@ -76,14 +76,12 @@ func NewWrapperHandler(ctx context.Context, restart WrapperRestartMode, hideStdO
 //     on this channel the wrapped process finally ended, the
 //     main process of the object will returns and all the
 //     channels will be closed
-func (p *wrapperHandler) Start() (<-chan WrapperStatus, <-chan int) {
-
+func (p *wrapperHandler) Start(exitStatus chan<- error) <-chan WrapperStatus {
 	wrapperStatus := make(chan WrapperStatus)
-	exitCode := make(chan int)
 
-	go p.do(wrapperStatus, exitCode)
+	go p.do(wrapperStatus, exitStatus)
 
-	return wrapperStatus, exitCode
+	return wrapperStatus
 }
 
 // run executes a new instance of the wrapped process and
@@ -106,7 +104,7 @@ func (p *wrapperHandler) run(runError chan<- error, signalOnErrors bool, loggedE
 
 	err := cmd.Start()
 	if err != nil {
-		logger.Error("cannot start the process %s: %s", p.path, err)
+		logger.Error("cannot start the wrapped process %s: %s", p.path, err)
 		// send with a separate goroutine to avoid a deadlock
 		go func() {
 			runError <- err
@@ -116,8 +114,7 @@ func (p *wrapperHandler) run(runError chan<- error, signalOnErrors bool, loggedE
 	}
 
 	go func() {
-
-		logger.Debug("waiting for the process %s to exit", p.path)
+		logger.Debug("waiting for the wrapped process %s to exit", p.path)
 		runError <- cmd.Wait()
 	}()
 }
@@ -140,9 +137,13 @@ func (p *wrapperHandler) canRestart(contextIsCanceling bool, exitStatus int) boo
 	return false
 }
 
-func (p *wrapperHandler) do(wrapperStatus chan<- WrapperStatus, exitCode chan<- int) {
+func (p *wrapperHandler) do(wrapperStatus chan<- WrapperStatus, chanExitStatus chan<- error) {
 
-	defer close(exitCode)
+	var exitStatus int
+	defer func() {
+		chanExitStatus <- NewProcessExitStatusError(exitStatus)
+	}()
+
 	defer close(wrapperStatus)
 
 	var contextIsCanceling bool
@@ -165,9 +166,9 @@ func (p *wrapperHandler) do(wrapperStatus chan<- WrapperStatus, exitCode chan<- 
 			if !contextIsCanceling {
 				p.run(runError, p.failOnStdErr, loggedErrors)
 				wrapperStatus <- WrapperStatusRunning
-				logger.Info("the process %s is started", p.path)
+				logger.Info("the wrapped process %s has started", p.path)
 			} else {
-				logger.Debug("the context is canceling, the process will not be started")
+				logger.Debug("the wrapped process context is canceling, not starting now")
 			}
 
 		case <-p.ctx.Done():
@@ -175,7 +176,7 @@ func (p *wrapperHandler) do(wrapperStatus chan<- WrapperStatus, exitCode chan<- 
 			// so when the main process is ending  we don't need to explicitly kill
 			// the wrapped process, because it  receives the same signal too, but we
 			// have to be sure it won't be started anymore
-			logger.Debug("the process context is canceled")
+			logger.Debug("the wrapped process context is canceled")
 
 			// from now, we must avoid to schedule a new execution of the process
 			// when runError channel sends a signal
@@ -185,19 +186,16 @@ func (p *wrapperHandler) do(wrapperStatus chan<- WrapperStatus, exitCode chan<- 
 			if restartTimer.Stop() {
 				// if a restart was scheduled, it means that the process is not running and
 				// we won't receive anything from runError channel, so we return immediately
-				logger.Debug("the process was scheduled, but not started, exiting...")
-				exitCode <- 0
+				logger.Debug("the wrapped process was scheduled, but not started, exiting...")
 				return
 			}
 
 		case n := <-loggedErrors:
 			wrapperStatus <- WrapperStatusError
-			logger.Debug("wrapped process logged an error: %d bytes", n)
+			logger.Debug("the wrapped process logged an error: %d bytes", n)
 
 		case err := <-runError:
 			// this channel receives the result error from the cmd.Wait() in the run method
-			var exitStatus int
-
 			if err != nil {
 				if !contextIsCanceling {
 					wrapperStatus <- WrapperStatusError
@@ -206,27 +204,26 @@ func (p *wrapperHandler) do(wrapperStatus chan<- WrapperStatus, exitCode chan<- 
 				if exitError, ok := err.(*exec.ExitError); ok {
 					if status, ok := exitError.Sys().(syscall.WaitStatus); ok {
 						exitStatus = status.ExitStatus()
-						logger.Info("wrapped process exit Status: %d", exitStatus)
+						logger.Info("wrapped process exited with status: %d", byte(exitStatus))
 					}
 				} else {
-					logger.Error("wrapped process error: %v", err)
+					logger.Error("wrapped process exited with error: %v", err)
 				}
 			} else {
 				if !contextIsCanceling {
 					wrapperStatus <- WrapperStatusStopped
 				}
 
-				logger.Info("the process has ended without errors")
+				logger.Debug("the wrapped process has ended without errors")
 			}
 
 			// check if the process must be restarted or not
 			if p.canRestart(contextIsCanceling, exitStatus) {
-				logger.Debug("the process will restart in %d seconds...", restartInterval/time.Second)
+				logger.Debug("the wrapped process will restart in %d seconds...", restartInterval/time.Second)
 				restartTimer = time.NewTimer(restartInterval)
 				restartInterval *= 2
 			} else {
-				logger.Debug("the process is completed, exiting now...")
-				exitCode <- exitStatus
+				logger.Debug("the wrapped process is completed, exiting now...")
 				return
 			}
 		}

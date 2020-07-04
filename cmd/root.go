@@ -164,7 +164,7 @@ func do(processStatus <-chan system.WrapperStatus, updateAlive chan<- bool) chan
 	return done
 }
 
-func wait(cancelFunc context.CancelFunc, serverDone <-chan struct{}, processDone <-chan int, done chan<- struct{}) error {
+func wait(cancelFunc context.CancelFunc, serverDone <-chan struct{}, processDone <-chan error, done chan<- struct{}) error {
 	// create the channel to catch SIGINT signal
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -179,12 +179,7 @@ func wait(cancelFunc context.CancelFunc, serverDone <-chan struct{}, processDone
 			// the http server and finally we return
 			cancelFunc()
 			<-serverDone
-			exitStatus := <-processDone
-
-			if exitStatus != 0 {
-				return fmt.Errorf("the wrapper function returned errors")
-			}
-			return nil
+			return <-processDone
 
 		case exitStatus := <-processDone:
 			// if processDone is closed, then the process has stopped
@@ -192,21 +187,14 @@ func wait(cancelFunc context.CancelFunc, serverDone <-chan struct{}, processDone
 			// and then we return
 			cancelFunc()
 			<-serverDone
-			if exitStatus != 0 {
-				return fmt.Errorf("the wrapper function returned errors")
-			}
-			return nil
+			return exitStatus
 
 		case <-serverDone:
 			// if serverDone is closed, then the http server has stopped
 			// because of an error, so we stop the wrapped process and
 			// then we return
 			cancelFunc()
-			exitStatus := <-processDone
-			if exitStatus != 0 {
-				return fmt.Errorf("the wrapper function returned errors")
-			}
-			return nil
+			return <-processDone
 		}
 
 	}
@@ -220,12 +208,14 @@ func run(_ *cobra.Command, _ []string) error {
 	updateAlive, serverDone := server.Start()
 
 	// start the wrapped process
+	exitStatus := make(chan error)
+	defer close(exitStatus)
 	process := system.NewWrapperHandler(ctx, getRestartMode(), viper.GetBool("process.hide-stdout"),
 		viper.GetBool("process.hide-stderr"), viper.GetBool("process.fail-on-stderr"),
 		viper.GetString("process.path"), viper.GetStringSlice("process.args")...)
-	processStatus, processDone := process.Start()
+	processStatus := process.Start(exitStatus)
 
 	done := do(processStatus, updateAlive)
 
-	return wait(cancelFunc, serverDone, processDone, done)
+	return wait(cancelFunc, serverDone, exitStatus, done)
 }
