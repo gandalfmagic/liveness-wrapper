@@ -30,12 +30,13 @@ type WrapperHandler interface {
 }
 
 type wrapperHandler struct {
-	arg        []string
-	ctx        context.Context
-	hideStdErr bool
-	hideStdOut bool
-	path       string
-	restart    WrapperRestartMode
+	arg          []string
+	ctx          context.Context
+	failOnStdErr bool
+	hideStdErr   bool
+	hideStdOut   bool
+	path         string
+	restart      WrapperRestartMode
 }
 
 // NewWrapperStatus creates a new process wrapper and returns it
@@ -49,15 +50,17 @@ type wrapperHandler struct {
 //   arg: a list of arguments for the process
 // Return values:
 //   system.WrapperHandler
-func NewWrapperHandler(ctx context.Context, restart WrapperRestartMode, hideStdOut, hideStdErr bool, path string, arg ...string) WrapperHandler {
+func NewWrapperHandler(ctx context.Context, restart WrapperRestartMode, hideStdOut, hideStdErr, failOnStdErr bool,
+	path string, arg ...string) WrapperHandler {
 
 	p := &wrapperHandler{
-		arg:        arg,
-		ctx:        ctx,
-		hideStdErr: hideStdErr,
-		hideStdOut: hideStdOut,
-		path:       path,
-		restart:    restart,
+		arg:          arg,
+		ctx:          ctx,
+		failOnStdErr: failOnStdErr,
+		hideStdErr:   hideStdErr,
+		hideStdOut:   hideStdOut,
+		path:         path,
+		restart:      restart,
 	}
 
 	return p
@@ -85,16 +88,20 @@ func (p *wrapperHandler) Start() (<-chan WrapperStatus, <-chan int) {
 
 // run executes a new instance of the wrapped process and
 // starts the goroutine responsible to wait for it to end
-func (p *wrapperHandler) run(runError chan<- error) {
+func (p *wrapperHandler) run(runError chan<- error, signalOnErrors bool, loggedErrors chan<- int) {
 
 	// instantiate the new process ans starts it
 	cmd := exec.CommandContext(p.ctx, p.path, p.arg...)
 
 	if !p.hideStdOut {
-		cmd.Stdout = logger.NewLogInfoWriter("wrapped info")
+		cmd.Stdout = logger.NewLogInfoWriter("wrapped log")
 	}
 	if !p.hideStdErr {
-		cmd.Stderr = logger.NewLogInfoWriter("wrapped error")
+		if signalOnErrors {
+			cmd.Stderr = logger.SignalOnWrite(loggedErrors, logger.NewLogErrorWriter("wrapped log"))
+		} else {
+			cmd.Stderr = logger.NewLogErrorWriter("wrapped log")
+		}
 	}
 
 	err := cmd.Start()
@@ -144,6 +151,9 @@ func (p *wrapperHandler) do(wrapperStatus chan<- WrapperStatus, exitCode chan<- 
 	runError := make(chan error)
 	defer close(runError)
 
+	loggedErrors := make(chan int)
+	defer close(loggedErrors)
+
 	// we schedule the process to start the first time (without delay)
 	restartTimer := time.NewTimer(0)
 
@@ -153,7 +163,7 @@ func (p *wrapperHandler) do(wrapperStatus chan<- WrapperStatus, exitCode chan<- 
 			// when a signal i received from the restartTimer, the wrapped
 			// process is executed
 			if !contextIsCanceling {
-				p.run(runError)
+				p.run(runError, p.failOnStdErr, loggedErrors)
 				wrapperStatus <- WrapperStatusRunning
 				logger.Info("the process %s is started", p.path)
 			} else {
@@ -179,6 +189,10 @@ func (p *wrapperHandler) do(wrapperStatus chan<- WrapperStatus, exitCode chan<- 
 				exitCode <- 0
 				return
 			}
+
+		case n := <-loggedErrors:
+			wrapperStatus <- WrapperStatusError
+			logger.Debug("wrapped process logged an error: %d bytes", n)
 
 		case err := <-runError:
 			// this channel receives the result error from the cmd.Wait() in the run method

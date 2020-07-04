@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"io"
 	"net/http"
 	"os"
 
@@ -60,16 +61,44 @@ func Configure(prefix, level string) {
 	lumber.Debug("logger configured to console output")
 }
 
-type LogInfoWriter struct {
+type logInfoWriter struct {
 	prefix string
 }
 
-func NewLogInfoWriter(prefix string) *LogInfoWriter {
-	lw := &LogInfoWriter{prefix: prefix}
+func NewLogInfoWriter(prefix string) io.Writer {
+	lw := &logInfoWriter{prefix: prefix}
 	return lw
 }
 
-func (lw LogInfoWriter) Write(p []byte) (n int, err error) {
+func (lw logInfoWriter) Write(p []byte) (n int, err error) {
 	lumber.Info(lw.prefix + ": " + string(p))
 	return len(p), nil
+}
+
+type logErrorWriter struct {
+	prefix string
+}
+
+func NewLogErrorWriter(prefix string) io.Writer {
+	lw := &logErrorWriter{prefix: prefix}
+	return lw
+}
+
+func (lw logErrorWriter) Write(p []byte) (n int, err error) {
+	lumber.Error(lw.prefix + ": " + string(p))
+	return len(p), nil
+}
+
+type WriterFunc func([]byte) (int, error)
+
+func (w WriterFunc) Write(p []byte) (n int, err error) {
+	return w(p)
+}
+
+func SignalOnWrite(signal chan<- int, wrapped io.Writer) io.Writer {
+	return WriterFunc(func(p []byte) (n int, err error) {
+		n, err = wrapped.Write(p)
+		signal <- n
+		return
+	})
 }

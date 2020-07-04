@@ -46,6 +46,7 @@ func init() {
 	RootCmd.PersistentFlags().StringSlice("process-args", nil, "comma separated list of process arguments")
 	RootCmd.PersistentFlags().Bool("process-hide-stdout", false, "Hide the stdout of the wrapped process from the logs")
 	RootCmd.PersistentFlags().Bool("process-hide-stderr", false, "Hide the stderr of the wrapped process from the logs")
+	RootCmd.PersistentFlags().Bool("process-fail-on-stderr", false, "Mark the wrapped process as failed if it writes logs on stderr")
 	RootCmd.PersistentFlags().StringP("server-address", "a", ":6060", "bind address")
 	RootCmd.PersistentFlags().DurationP("server-ping-timeout", "t", 10*time.Minute, "ping timeout")
 	RootCmd.PersistentFlags().String("log-level", "WARN", "Output level of logs (TRACE, DEBUG, INFO, WARN, ERROR, FATAL)")
@@ -61,6 +62,7 @@ func init() {
 	_ = viper.BindPFlag("process.args", RootCmd.PersistentFlags().Lookup("process-args"))
 	_ = viper.BindPFlag("process.hide-stdout", RootCmd.PersistentFlags().Lookup("process-hide-stdout"))
 	_ = viper.BindPFlag("process.hide-stderr", RootCmd.PersistentFlags().Lookup("process-hide-stderr"))
+	_ = viper.BindPFlag("process.fail-on-stderr", RootCmd.PersistentFlags().Lookup("process-fail-on-stderr"))
 
 	_ = viper.BindPFlag("server.address", RootCmd.PersistentFlags().Lookup("server-address"))
 	_ = viper.BindPFlag("server.ping-timeout", RootCmd.PersistentFlags().Lookup("server-ping-timeout"))
@@ -219,7 +221,8 @@ func run(_ *cobra.Command, _ []string) error {
 
 	// start the wrapped process
 	process := system.NewWrapperHandler(ctx, getRestartMode(), viper.GetBool("process.hide-stdout"),
-		viper.GetBool("process.hide-stderr"), viper.GetString("process.path"), viper.GetStringSlice("process.args")...)
+		viper.GetBool("process.hide-stderr"), viper.GetBool("process.fail-on-stderr"),
+		viper.GetString("process.path"), viper.GetStringSlice("process.args")...)
 	processStatus, processDone := process.Start()
 
 	done := do(processStatus, updateAlive)
