@@ -40,15 +40,15 @@ var (
 
 func init() {
 	// cli flags
-	RootCmd.PersistentFlags().StringP("process-path", "p", "", "process path")
-	RootCmd.PersistentFlags().BoolP("process-restart-always", "r", false, "always restart the process when it ends")
-	RootCmd.PersistentFlags().BoolP("process-restart-on-error", "e", false, "restart the process only when it fails")
-	RootCmd.PersistentFlags().StringSlice("process-args", nil, "comma separated list of process arguments")
+	RootCmd.PersistentFlags().StringP("process-path", "p", "", "Path of the wrapped process executable")
+	RootCmd.PersistentFlags().BoolP("process-restart-always", "r", false, "Always restart the wrapped process when it ends")
+	RootCmd.PersistentFlags().BoolP("process-restart-on-error", "e", false, "Restart the wrapped process only when it fails")
+	RootCmd.PersistentFlags().StringSlice("process-args", nil, "Comma separated list of arguments for the wrapped process")
 	RootCmd.PersistentFlags().Bool("process-hide-stdout", false, "Hide the stdout of the wrapped process from the logs")
 	RootCmd.PersistentFlags().Bool("process-hide-stderr", false, "Hide the stderr of the wrapped process from the logs")
 	RootCmd.PersistentFlags().Bool("process-fail-on-stderr", false, "Mark the wrapped process as failed if it writes logs on stderr")
-	RootCmd.PersistentFlags().StringP("server-address", "a", ":6060", "bind address")
-	RootCmd.PersistentFlags().DurationP("server-ping-timeout", "t", 10*time.Minute, "ping endpoint timeout, use 0 to disable")
+	RootCmd.PersistentFlags().StringP("server-address", "a", ":6060", "Bind address for the http server")
+	RootCmd.PersistentFlags().DurationP("server-ping-timeout", "t", 10*time.Minute, "Ping endpoint timeout, use 0 to disable")
 	RootCmd.PersistentFlags().String("log-level", "WARN", "Output level of logs (TRACE, DEBUG, INFO, WARN, ERROR, FATAL)")
 
 	// cli-only flags
