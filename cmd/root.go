@@ -29,13 +29,12 @@ var (
 
 	// HoarderCmd ...
 	RootCmd = &cobra.Command{
-		Long:             internal.RootDescriptionLong,
-		PersistentPreRun: persistentPreRun,
-		RunE:             run,
-		Short:            internal.RootDescriptionShort,
-		SilenceErrors:    true,
-		SilenceUsage:     true,
-		Use:              internal.RootName,
+		Long:              internal.RootDescriptionLong,
+		PersistentPreRunE: persistentPreRunE,
+		RunE:              run,
+		Short:             internal.RootDescriptionShort,
+		SilenceUsage:      true,
+		Use:               internal.RootName,
 	}
 )
 
@@ -91,38 +90,44 @@ func printVersion() {
 	}
 }
 
-func persistentPreRun(_ *cobra.Command, _ []string) {
+func persistentPreRunE(_ *cobra.Command, _ []string) error {
 
 	printVersion()
+	if err := readConfig(); err != nil {
+		if e, ok := err.(viper.ConfigFileNotFoundError); ok {
+			logger.Info("no configuration file found: %s", e)
+		} else {
+			return err
+		}
+	}
 	logger.Configure(internal.RootName, viper.GetString("log.level"))
-	readConfig()
 	convertToAbsProjectDirectory()
+
+	return nil
 }
 
-func readConfig() {
+func readConfig() error {
 
 	if config != "" {
 		// Use config file from the flag
 		viper.SetConfigFile(config)
-		logger.Info("reading configuration from %s", config)
 	} else {
 		// Find home directory
 		home, err := homedir.Dir()
-		logger.CheckFatal("cannot find home directory", err)
+		if err != nil {
+			return err
+		}
 
 		// Search config in home directory
 		viper.SetConfigType("yaml")
 		viper.SetConfigName(internal.ConfigurationFile)
 		viper.AddConfigPath(home)
 		config = filepath.Join(home, internal.ConfigurationFile)
-		logger.Info("reading configuration from %s.yaml", config)
 	}
 
 	viper.AutomaticEnv()
 
-	if err := viper.ReadInConfig(); err != nil {
-		logger.Info("the configuration file doesn't exist")
-	}
+	return viper.ReadInConfig()
 }
 
 func getRestartMode() system.WrapperRestartMode {
