@@ -99,7 +99,7 @@ func NewServer(ctx context.Context, addr string, pingInterval time.Duration) Ser
 	return s
 }
 
-func (s *server) do(contextDone <-chan struct{}) {
+func (s *server) do() {
 	defer close(s.pingChannel)
 	defer close(s.updateReady)
 
@@ -110,7 +110,7 @@ func (s *server) do(contextDone <-chan struct{}) {
 
 	for {
 		select {
-		case <-contextDone:
+		case <-s.ctx.Done():
 			logger.Debug("http server context is closing")
 			s.isReady = false
 			timer.Stop()
@@ -185,7 +185,7 @@ func (s *server) Start() (chan<- bool, <-chan struct{}) {
 		}
 	}()
 
-	go s.do(s.ctx.Done())
+	go s.do()
 
 	return s.externalAlive, serverDone
 }
