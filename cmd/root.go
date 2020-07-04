@@ -33,6 +33,7 @@ var (
 		PersistentPreRun: persistentPreRun,
 		RunE:             run,
 		Short:            internal.RootDescriptionShort,
+		SilenceErrors:    true,
 		SilenceUsage:     true,
 		Use:              internal.RootName,
 	}
@@ -164,7 +165,7 @@ func do(processStatus <-chan system.WrapperStatus, updateAlive chan<- bool) chan
 	return done
 }
 
-func wait(cancelFunc context.CancelFunc, serverDone <-chan struct{}, processDone <-chan error, done chan<- struct{}) error {
+func wait(cancelFunc context.CancelFunc, serverDone <-chan struct{}, exitStatus <-chan error, done chan<- struct{}) error {
 	// create the channel to catch SIGINT signal
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -179,10 +180,10 @@ func wait(cancelFunc context.CancelFunc, serverDone <-chan struct{}, processDone
 			// the http server and finally we return
 			cancelFunc()
 			<-serverDone
-			return <-processDone
+			return <-exitStatus
 
-		case exitStatus := <-processDone:
-			// if processDone is closed, then the process has stopped
+		case exitStatus := <-exitStatus:
+			// if we receive an exitStatus, then the process has stopped
 			// (without being restarted), so we stop the http server
 			// and then we return
 			cancelFunc()
@@ -194,7 +195,7 @@ func wait(cancelFunc context.CancelFunc, serverDone <-chan struct{}, processDone
 			// because of an error, so we stop the wrapped process and
 			// then we return
 			cancelFunc()
-			return <-processDone
+			return <-exitStatus
 		}
 
 	}
