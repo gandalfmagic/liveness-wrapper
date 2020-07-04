@@ -141,7 +141,10 @@ func (p *wrapperHandler) do(wrapperStatus chan<- WrapperStatus, chanExitStatus c
 
 	var exitStatus int
 	defer func() {
-		chanExitStatus <- NewProcessExitStatusError(exitStatus)
+		if exitStatus != 0 {
+			chanExitStatus <- NewProcessExitStatusError(exitStatus)
+		}
+		chanExitStatus <- nil
 	}()
 
 	defer close(wrapperStatus)
