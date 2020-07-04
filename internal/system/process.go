@@ -149,7 +149,6 @@ func (p *wrapperHandler) do(wrapperStatus chan<- WrapperStatus, chanExitStatus c
 
 	defer close(wrapperStatus)
 
-	var contextIsCanceling bool
 	restartInterval := 1 * time.Second
 
 	runError := make(chan error)
@@ -161,10 +160,12 @@ func (p *wrapperHandler) do(wrapperStatus chan<- WrapperStatus, chanExitStatus c
 	// we schedule the process to start the first time (without delay)
 	restartTimer := time.NewTimer(0)
 
+	var contextDone bool
+
 	for {
 		select {
 		case <-restartTimer.C:
-			if contextIsCanceling {
+			if contextDone {
 				logger.Debug("cannot execute the wrapped process, the context is closing")
 				continue
 			}
@@ -176,7 +177,7 @@ func (p *wrapperHandler) do(wrapperStatus chan<- WrapperStatus, chanExitStatus c
 			logger.Info("the wrapped process %s has started", p.path)
 
 		case <-p.ctx.Done():
-			if contextIsCanceling {
+			if contextDone {
 				continue
 			}
 
@@ -188,7 +189,7 @@ func (p *wrapperHandler) do(wrapperStatus chan<- WrapperStatus, chanExitStatus c
 
 			// from now, we must avoid to schedule a new execution of the process
 			// when runError channel sends a signal
-			contextIsCanceling = true
+			contextDone = true
 
 			// if a restart is already scheduled, we stop it now
 			if restartTimer.Stop() {
@@ -205,7 +206,7 @@ func (p *wrapperHandler) do(wrapperStatus chan<- WrapperStatus, chanExitStatus c
 		case err := <-runError:
 			// this channel receives the result error from the cmd.Wait() in the run method
 			if err != nil {
-				if !contextIsCanceling {
+				if !contextDone {
 					wrapperStatus <- WrapperStatusError
 				}
 
@@ -218,7 +219,7 @@ func (p *wrapperHandler) do(wrapperStatus chan<- WrapperStatus, chanExitStatus c
 					logger.Error("wrapped process exited with error: %v", err)
 				}
 			} else {
-				if !contextIsCanceling {
+				if !contextDone {
 					wrapperStatus <- WrapperStatusStopped
 				}
 
@@ -226,7 +227,7 @@ func (p *wrapperHandler) do(wrapperStatus chan<- WrapperStatus, chanExitStatus c
 			}
 
 			// check if the process must be restarted or not
-			if p.canRestart(contextIsCanceling, exitStatus) {
+			if p.canRestart(contextDone, exitStatus) {
 				logger.Debug("the wrapped process will restart in %d seconds...", restartInterval/time.Second)
 				restartTimer = time.NewTimer(restartInterval)
 				restartInterval *= 2
