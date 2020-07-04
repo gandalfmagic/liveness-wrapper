@@ -100,6 +100,8 @@ func NewServer(ctx context.Context, addr string, pingInterval time.Duration) Ser
 }
 
 func (s *server) do(contextDone <-chan struct{}) {
+	defer close(s.pingChannel)
+	defer close(s.updateReady)
 
 	timer := time.NewTimer(s.pingInterval)
 
@@ -112,8 +114,6 @@ func (s *server) do(contextDone <-chan struct{}) {
 			logger.Debug("http server context is closing")
 			s.isReady = false
 			timer.Stop()
-			close(s.pingChannel)
-			close(s.updateReady)
 			s.shutdown()
 			return
 
