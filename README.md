@@ -8,11 +8,11 @@ A better way to integrate some applications inside of a Kubernetes deployment.
 
 `liveness-wrapper` executes a child process, and keeps it monitored, providing a set of REST endpoints to use in a [Deployment on Kubernetes](#deployment-on-kubernetes).
 
-- `[GET] /ready`: this endpoint expose the readiness for the internal http server.
+- `[GET] /ready`: this endpoint expose the `readiness` for the internal http server.
 
-- `[GET] /alive`: this endpoint expose the liveness of the wrapped process. The http status code provided by this endpoint will change as the state of the wrapped process changes.
+- `[GET] /alive`: this endpoint expose the `liveness` of the child process. The http status code provided by this endpoint will change as the state of the wrapped process changes.
 
-- `[GET] /ping`: this endpoint can be used by the child process to actively report that it's still alive.
+- `[GET] /ping`: this endpoint can be used by the child process to actively report that it's still functioning.
 
 ## Command line usage
 
