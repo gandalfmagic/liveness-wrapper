@@ -48,7 +48,7 @@ func init() {
 	RootCmd.PersistentFlags().Bool("process-hide-stderr", false, "Hide the stderr of the wrapped process from the logs")
 	RootCmd.PersistentFlags().Bool("process-fail-on-stderr", false, "Mark the wrapped process as failed if it writes logs on stderr")
 	RootCmd.PersistentFlags().StringP("server-address", "a", ":6060", "bind address")
-	RootCmd.PersistentFlags().DurationP("server-ping-timeout", "t", 10*time.Minute, "ping timeout")
+	RootCmd.PersistentFlags().DurationP("server-ping-timeout", "t", 10*time.Minute, "ping endpoint timeout, use 0 to disable")
 	RootCmd.PersistentFlags().String("log-level", "WARN", "Output level of logs (TRACE, DEBUG, INFO, WARN, ERROR, FATAL)")
 
 	// cli-only flags

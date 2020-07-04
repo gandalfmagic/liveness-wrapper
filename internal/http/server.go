@@ -109,6 +109,7 @@ func (s *server) do(contextDone <-chan struct{}) {
 	for {
 		select {
 		case <-contextDone:
+			logger.Debug("http server context is closing")
 			s.isReady = false
 			timer.Stop()
 			close(s.pingChannel)
@@ -121,8 +122,16 @@ func (s *server) do(contextDone <-chan struct{}) {
 			logger.Debug("alive status changed to %t", s.isAlive)
 
 		case isPingAlive = <-s.pingChannel:
+			if s.pingInterval == 0 {
+				logger.Debug("timeout is %s, ignoring ping endpoint", s.pingInterval)
+				isPingAlive = true
+				s.isAlive = isExternalAlive && isPingAlive
+				continue
+			}
+
 			s.isAlive = isExternalAlive && isPingAlive
 			logger.Debug("alive status changed to %t", s.isAlive)
+
 			if !timer.Stop() {
 				<-timer.C
 			}
@@ -133,10 +142,15 @@ func (s *server) do(contextDone <-chan struct{}) {
 			logger.Debug("ready status changed to %t", s.isReady)
 
 		case <-timer.C:
-			logger.Debug("timer is expired")
+			if s.pingInterval == 0 {
+				logger.Debug("timeout is %s, the timeout is ignored", s.pingInterval)
+				continue
+			}
+
 			isPingAlive = false
 			s.isAlive = isExternalAlive && isPingAlive
 			timer.Reset(s.pingInterval)
+			logger.Debug("timer is expired, restarted with interval %s", s.pingInterval)
 		}
 	}
 }
