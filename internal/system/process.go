@@ -164,22 +164,27 @@ func (p *wrapperHandler) do(wrapperStatus chan<- WrapperStatus, chanExitStatus c
 	for {
 		select {
 		case <-restartTimer.C:
-			// when a signal i received from the restartTimer, the wrapped
-			// process is executed
-			if !contextIsCanceling {
-				p.run(runError, p.failOnStdErr, loggedErrors)
-				wrapperStatus <- WrapperStatusRunning
-				logger.Info("the wrapped process %s has started", p.path)
-			} else {
-				logger.Debug("the wrapped process context is canceling, not starting now")
+			if contextIsCanceling {
+				logger.Debug("cannot execute the wrapped process, the context is closing")
+				continue
 			}
 
+			// when a signal i received from the restartTimer, the wrapped
+			// process is started
+			p.run(runError, p.failOnStdErr, loggedErrors)
+			wrapperStatus <- WrapperStatusRunning
+			logger.Info("the wrapped process %s has started", p.path)
+
 		case <-p.ctx.Done():
+			if contextIsCanceling {
+				continue
+			}
+
 			// this channel receives the signal from the context.CancelFunc() method,
 			// so when the main process is ending  we don't need to explicitly kill
 			// the wrapped process, because it  receives the same signal too, but we
 			// have to be sure it won't be started anymore
-			logger.Debug("the wrapped process context is canceled")
+			logger.Debug("received the signal to close the wrapped process context")
 
 			// from now, we must avoid to schedule a new execution of the process
 			// when runError channel sends a signal
