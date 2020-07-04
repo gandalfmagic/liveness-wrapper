@@ -11,15 +11,18 @@ liveness-wrapper: *.go */*.go
 
 
 bin/linux-amd64/liveness-wrapper: *.go */*.go
-	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -o bin/linux-amd64/liveness-wrapper -ldflags="-extldflags=-static -s -w -X github.com/gandalfmagic/liveness-wrapper/cmd.commit=${COMMIT} -X github.com/gandalfmagic/liveness-wrapper/cmd.version=${VERSION}" .
+	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -o bin/linux-amd64/liveness-wrapper/liveness-wrapper -ldflags="-extldflags=-static -s -w -X github.com/gandalfmagic/liveness-wrapper/cmd.commit=${COMMIT} -X github.com/gandalfmagic/liveness-wrapper/cmd.version=${VERSION}" .
+	cp LICENSE bin/linux-amd64/liveness-wrapper
 
 
 bin/linux-arm/liveness-wrapper: *.go */*.go
-	CGO_ENABLED=0 GOARCH=arm GOOS=linux go build -o bin/linux-arm/liveness-wrapper -ldflags='-extldflags=-static -s -w -X github.com/gandalfmagic/liveness-wrapper/cmd.commit=${COMMIT} -X github.com/gandalfmagic/liveness-wrapper/cmd.version=${VERSION}' .
+	CGO_ENABLED=0 GOARCH=arm GOOS=linux go build -o bin/linux-arm/liveness-wrapper/liveness-wrapper -ldflags='-extldflags=-static -s -w -X github.com/gandalfmagic/liveness-wrapper/cmd.commit=${COMMIT} -X github.com/gandalfmagic/liveness-wrapper/cmd.version=${VERSION}' .
+	cp LICENSE bin/linux-arm/liveness-wrapper
 
 
 bin/linux-arm64/liveness-wrapper: *.go */*.go
-	CGO_ENABLED=0 GOARCH=arm64 GOOS=linux go build -o bin/linux-arm64/liveness-wrapper -ldflags='-extldflags=-static -s -w -X github.com/gandalfmagic/liveness-wrapper/cmd.commit=${COMMIT} -X github.com/gandalfmagic/liveness-wrapper/cmd.version=${VERSION}' .
+	CGO_ENABLED=0 GOARCH=arm64 GOOS=linux go build -o bin/linux-arm64/liveness-wrapper/liveness-wrapper -ldflags='-extldflags=-static -s -w -X github.com/gandalfmagic/liveness-wrapper/cmd.commit=${COMMIT} -X github.com/gandalfmagic/liveness-wrapper/cmd.version=${VERSION}' .
+	cp LICENSE bin/linux-arm64/liveness-wrapper
 
 
 .PHONY: install
@@ -29,15 +32,15 @@ install: liveness-wrapper
 
 
 $(NAME)-$(VERSION)-amd64.tar.gz: bin/linux-amd64/liveness-wrapper
-	tar -cz -C bin/linux-amd64 liveness-wrapper > $(NAME)-$(VERSION)-amd64.tar.gz
+	tar -cz -C bin/linux-amd64 liveness-wrapper/ > $(NAME)-$(VERSION)-amd64.tar.gz
 
 
 $(NAME)-$(VERSION)-arm.tar.gz: bin/linux-arm/liveness-wrapper
-	tar -cz -C bin/linux-arm liveness-wrapper > $(NAME)-$(VERSION)-arm.tar.gz
+	tar -cz -C bin/linux-arm liveness-wrapper/ > $(NAME)-$(VERSION)-arm.tar.gz
 
 
 $(NAME)-$(VERSION)-arm64.tar.gz: bin/linux-arm64/liveness-wrapper
-	tar -cz -C bin/linux-arm64 liveness-wrapper > $(NAME)-$(VERSION)-arm64.tar.gz
+	tar -cz -C bin/linux-arm64 liveness-wrapper/ > $(NAME)-$(VERSION)-arm64.tar.gz
 
 
 .PHONY: package
