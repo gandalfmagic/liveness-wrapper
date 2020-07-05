@@ -30,8 +30,6 @@ func (rw *responseWriter) WriteHeader(code int) {
 	rw.status = code
 	rw.ResponseWriter.WriteHeader(code)
 	rw.wroteHeader = true
-
-	return
 }
 
 func LoggingMiddleware() func(http.Handler) http.Handler {
