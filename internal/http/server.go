@@ -2,7 +2,6 @@ package http
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"time"
 
@@ -35,58 +34,10 @@ func NewServer(ctx context.Context, addr string, pingInterval time.Duration) Ser
 	}
 
 	mux := http.NewServeMux()
-
-	mux.HandleFunc("/ready", func(wr http.ResponseWriter, r *http.Request) {
-
-		wr.Header().Set("Content-Type", "text/plain")
-
-		if s.isReady {
-			wr.WriteHeader(http.StatusOK)
-			_, _ = io.WriteString(wr, "Ready")
-			logger.HttpDebug(r, http.StatusOK)
-		} else {
-			wr.WriteHeader(http.StatusServiceUnavailable)
-			_, _ = io.WriteString(wr, "Not ready")
-			logger.HttpDebug(r, http.StatusServiceUnavailable)
-		}
-	})
-
-	mux.HandleFunc("/alive", func(wr http.ResponseWriter, r *http.Request) {
-
-		wr.Header().Set("Content-Type", "text/plain")
-
-		if s.isAlive {
-			wr.WriteHeader(http.StatusOK)
-			_, _ = io.WriteString(wr, "Service available")
-			logger.HttpDebug(r, http.StatusOK)
-		} else {
-			wr.WriteHeader(http.StatusServiceUnavailable)
-			_, _ = io.WriteString(wr, "Service down")
-			logger.HttpDebug(r, http.StatusServiceUnavailable)
-		}
-	})
-
-	mux.HandleFunc("/ping", func(wr http.ResponseWriter, r *http.Request) {
-
-		s.pingChannel <- true
-
-		wr.Header().Set("Content-Type", "text/plain")
-		wr.WriteHeader(http.StatusOK)
-
-		_, _ = io.WriteString(wr, "Pong")
-
-		logger.HttpDebug(r, http.StatusOK)
-	})
-
-	mux.HandleFunc("/", func(wr http.ResponseWriter, r *http.Request) {
-
-		wr.Header().Set("Content-Type", "text/plain")
-		wr.WriteHeader(http.StatusNotFound)
-
-		_, _ = io.WriteString(wr, "Not Found")
-
-		logger.HttpError(r, http.StatusNotFound)
-	})
+	mux.Handle("/ready", LoggingMiddleware()(MethodsMiddleware([]string{"GET"})(http.HandlerFunc(s.ReadyHandler))))
+	mux.Handle("/alive", LoggingMiddleware()(MethodsMiddleware([]string{"GET"})(http.HandlerFunc(s.AliveHandler))))
+	mux.Handle("/ping", LoggingMiddleware()(MethodsMiddleware([]string{"GET"})(http.HandlerFunc(s.PingHandler))))
+	mux.Handle("/", LoggingMiddleware()(MethodsMiddleware([]string{"GET"})(http.HandlerFunc(RootHandler))))
 
 	s.server = &http.Server{
 		Addr:         addr,

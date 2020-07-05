@@ -1,9 +1,11 @@
 package logger
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/jcelliott/lumber"
 )
@@ -17,6 +19,11 @@ func CheckFatal(message string, err error) {
 func Fatal(format string, v ...interface{}) {
 	lumber.Fatal(format, v...)
 	os.Exit(1)
+}
+
+func ErrorWithStack(format string, stack []byte, v ...interface{}) {
+	format = fmt.Sprintf("%s\n%s", format, stack)
+	lumber.Error(format, v...)
 }
 
 func Error(format string, v ...interface{}) {
@@ -49,6 +56,10 @@ func HttpInfo(r *http.Request, status int) {
 
 func HttpDebug(r *http.Request, status int) {
 	lumber.Debug("%s %s \"%s\" %d \"%s\" \"%s\"", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent())
+}
+
+func HttpDebugWithDuration(r *http.Request, status int, duration time.Duration) {
+	lumber.Debug("%s %s \"%s\" %d \"%s\" \"%s\" %s", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent(), duration)
 }
 
 func Configure(prefix, level string) {
