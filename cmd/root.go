@@ -143,40 +143,21 @@ func getRestartMode() system.WrapperRestartMode {
 	return system.WrapperRestartNever
 }
 
-func do(processStatus <-chan system.WrapperStatus, updateAlive chan<- bool) chan<- struct{} {
-	done := make(chan struct{})
-
-	go func() {
-		defer close(updateAlive)
-		for {
-			select {
-			case s := <-processStatus:
-				// change the readiness state based on the process status
-				switch s {
-				case system.WrapperStatusError:
-					updateAlive <- false
-				case system.WrapperStatusRunning:
-					updateAlive <- true
-				case system.WrapperStatusStopped:
-					updateAlive <- false
-				}
-
-			case <-done:
-				return
-			}
-		}
-	}()
-
-	return done
+type runner struct {
+	updateAlive   chan<- bool
+	serverDone    <-chan struct{}
+	wrapperStatus <-chan system.WrapperStatus
+	wrapperError  <-chan error
 }
 
-func wait(cancelFunc context.CancelFunc, serverDone <-chan struct{}, exitStatus <-chan error, done chan<- struct{}) error {
+func (e *runner) wait(cancelFunc context.CancelFunc) error {
+	defer close(e.updateAlive)
+
 	// create the channel to catch SIGINT signal
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	defer close(c)
 
-	defer close(done)
 	for {
 		select {
 		case <-c:
@@ -184,26 +165,46 @@ func wait(cancelFunc context.CancelFunc, serverDone <-chan struct{}, exitStatus 
 			// sent by the system, so we stop the process, and
 			// the http server and finally we return
 			cancelFunc()
-			<-serverDone
-			return <-exitStatus
+			<-e.serverDone
+			return <-e.wrapperError
 
-		case exitStatus := <-exitStatus:
-			// if we receive an exitStatus, then the process has stopped
-			// (without being restarted), so we stop the http server
-			// and then we return
-			cancelFunc()
-			<-serverDone
-			return exitStatus
-
-		case <-serverDone:
+		case <-e.serverDone:
 			// if serverDone is closed, then the http server has stopped
 			// because of an error, so we stop the wrapped process and
 			// then we return
 			cancelFunc()
-			return <-exitStatus
-		}
+			return <-e.wrapperError
 
+		case ws := <-e.wrapperStatus:
+			// change the readiness state based on the process status
+			switch ws {
+			case system.WrapperStatusError:
+				e.updateAlive <- false
+			case system.WrapperStatusRunning:
+				e.updateAlive <- true
+			case system.WrapperStatusStopped:
+				e.updateAlive <- false
+			}
+
+		case err := <-e.wrapperError:
+
+			if ws, ok := <-e.wrapperStatus; ok {
+				switch ws {
+				case system.WrapperStatusError:
+					e.updateAlive <- false
+				case system.WrapperStatusRunning:
+					e.updateAlive <- true
+				case system.WrapperStatusStopped:
+					e.updateAlive <- false
+				}
+			}
+
+			cancelFunc()
+			<-e.serverDone
+			return err
+		}
 	}
+
 }
 
 func run(_ *cobra.Command, _ []string) error {
@@ -214,14 +215,17 @@ func run(_ *cobra.Command, _ []string) error {
 	updateAlive, serverDone := server.Start()
 
 	// start the wrapped process
-	exitStatus := make(chan error)
-	defer close(exitStatus)
 	process := system.NewWrapperHandler(ctx, getRestartMode(), viper.GetBool("process.hide-stdout"),
 		viper.GetBool("process.hide-stderr"), viper.GetBool("process.fail-on-stderr"),
 		viper.GetString("process.path"), viper.GetStringSlice("process.args")...)
-	processStatus := process.Start(exitStatus)
+	wrapperData, wrapperError := process.Start()
 
-	done := do(processStatus, updateAlive)
+	r := &runner{
+		updateAlive:   updateAlive,
+		serverDone:    serverDone,
+		wrapperStatus: wrapperData,
+		wrapperError:  wrapperError,
+	}
 
-	return wait(cancelFunc, serverDone, exitStatus, done)
+	return r.wait(cancelFunc)
 }
