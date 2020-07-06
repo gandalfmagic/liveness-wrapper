@@ -25,8 +25,14 @@ const (
 	WrapperRestartAlways
 )
 
+type WrapperData struct {
+	WrapperStatus WrapperStatus
+	Err           error
+	Done          bool
+}
+
 type WrapperHandler interface {
-	Start() (<-chan WrapperStatus, <-chan error)
+	Start() <-chan WrapperData
 }
 
 type wrapperHandler struct {
@@ -80,13 +86,10 @@ func NewWrapperHandler(ctx context.Context, restart WrapperRestartMode, hideStdO
 //     on this channel the wrapped process finally ended, the
 //     main process of the object will returns and all the
 //     channels will be closed
-func (p *wrapperHandler) Start() (<-chan WrapperStatus, <-chan error) {
-	chanWrapperStatus := make(chan WrapperStatus)
-	chanError := make(chan error)
-
-	go p.do(chanWrapperStatus, chanError)
-
-	return chanWrapperStatus, chanError
+func (p *wrapperHandler) Start() <-chan WrapperData {
+	chanWrapperData := make(chan WrapperData)
+	go p.do(chanWrapperData)
+	return chanWrapperData
 }
 
 // run executes a new instance of the wrapped process and
@@ -144,22 +147,19 @@ func (p *wrapperHandler) canRestart(contextIsCanceling bool, exitStatus int) boo
 	return false
 }
 
-func (p *wrapperHandler) do(chanWrapperStatus chan<- WrapperStatus, chanError chan<- error) {
+func (p *wrapperHandler) do(chanWrapperData chan<- WrapperData) {
 
-	defer close(chanError)
-	defer close(chanWrapperStatus)
+	defer close(chanWrapperData)
 
 	var processError error
 	var processExitStatus int
 	var status WrapperStatus
 	defer func() {
 		if processExitStatus != 0 {
-			//chanWrapperStatus <- status
-			chanError <- NewProcessExitStatusError(processExitStatus)
+			chanWrapperData <- WrapperData{status, NewProcessExitStatusError(processExitStatus), true}
 			return
 		}
-		//chanWrapperStatus <- status
-		chanError <- processError
+		chanWrapperData <- WrapperData{status, processError, true}
 	}()
 
 	runError := make(chan error)
@@ -185,12 +185,12 @@ func (p *wrapperHandler) do(chanWrapperStatus chan<- WrapperStatus, chanError ch
 			// process is started
 			if err := p.run(runError, p.failOnStdErr, loggedErrors); err != nil {
 				status = WrapperStatusError
-				chanWrapperStatus <- status
+				chanWrapperData <- WrapperData{status, nil, false}
 				continue
 			}
 
 			status = WrapperStatusRunning
-			chanWrapperStatus <- status
+			chanWrapperData <- WrapperData{status, nil, false}
 			logger.Info("the wrapped process %s has started", p.path)
 
 		case <-p.ctx.Done():
@@ -218,14 +218,14 @@ func (p *wrapperHandler) do(chanWrapperStatus chan<- WrapperStatus, chanError ch
 
 		case n := <-loggedErrors:
 			status = WrapperStatusError
-			chanWrapperStatus <- status
+			chanWrapperData <- WrapperData{status, nil, false}
 			logger.Debug("the wrapped process logged an error: %d bytes", n)
 
 		case err := <-runError:
 			// this channel receives the result error from the cmd.Wait() in the run method
 			if err != nil {
 				status = WrapperStatusError
-				chanWrapperStatus <- status
+				chanWrapperData <- WrapperData{status, nil, false}
 
 				if exitError, ok := err.(*exec.ExitError); ok {
 					if status, ok := exitError.Sys().(syscall.WaitStatus); ok {
@@ -238,7 +238,7 @@ func (p *wrapperHandler) do(chanWrapperStatus chan<- WrapperStatus, chanError ch
 			} else {
 				if !contextDone {
 					status = WrapperStatusStopped
-					chanWrapperStatus <- status
+					chanWrapperData <- WrapperData{status, nil, false}
 				}
 
 				logger.Debug("the wrapped process has ended without errors")

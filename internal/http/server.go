@@ -9,7 +9,7 @@ import (
 )
 
 type Server interface {
-	Start() (chan<- bool, <-chan struct{})
+	Start() (chan<- bool, chan<- bool, <-chan struct{})
 }
 
 type server struct {
@@ -67,7 +67,7 @@ func NewServer(ctx context.Context, addr string, pingInterval time.Duration) Ser
 
 func (s *server) do() {
 	defer close(s.pingChannel)
-	defer close(s.updateReady)
+	//defer close(s.updateReady)
 
 	timer := time.NewTimer(s.pingInterval)
 
@@ -121,7 +121,7 @@ func (s *server) do() {
 	}
 }
 
-func (s *server) Start() (chan<- bool, <-chan struct{}) {
+func (s *server) Start() (chan<- bool, chan<- bool, <-chan struct{}) {
 	isReady := make(chan struct{})
 	go s.do()
 
@@ -140,5 +140,5 @@ func (s *server) Start() (chan<- bool, <-chan struct{}) {
 	// Make sure the main process is ready before returning
 	<-isReady
 
-	return s.externalAlive, serverDone
+	return s.updateReady, s.externalAlive, serverDone
 }

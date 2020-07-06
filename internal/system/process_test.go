@@ -3,6 +3,7 @@ package system
 import (
 	"context"
 	"github.com/gandalfmagic/liveness-wrapper/pkg/logger"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -226,8 +227,7 @@ func Test_wrapperHandler_do(t *testing.T) {
 				restart:      tt.fields.restart,
 			}
 
-			chanWrapperStatus := make(chan WrapperStatus)
-			chanWrapperError := make(chan error)
+			chanWrapperData := make(chan WrapperData)
 			done := make(chan struct{})
 
 			var wrapperStatus WrapperStatus
@@ -236,9 +236,12 @@ func Test_wrapperHandler_do(t *testing.T) {
 				defer close(done)
 				for {
 					select {
-					case wrapperStatus = <-chanWrapperStatus:
-					case wrapperError = <-chanWrapperError:
-						return
+					case wd := <-chanWrapperData:
+						wrapperStatus = wd.WrapperStatus
+						wrapperError = wd.Err
+						if wd.Done {
+							return
+						}
 					}
 				}
 			}()
@@ -248,7 +251,7 @@ func Test_wrapperHandler_do(t *testing.T) {
 			}
 
 			t.Log("start the process")
-			go p.do(chanWrapperStatus, chanWrapperError)
+			go p.do(chanWrapperData)
 
 			t.Log("wait to ensure the process is running")
 			time.Sleep(10 * time.Millisecond)
@@ -426,8 +429,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				restart:      tt.fields.restart,
 			}
 
-			chanWrapperStatus := make(chan WrapperStatus)
-			chanWrapperError := make(chan error)
+			chanWrapperData := make(chan WrapperData)
 			done := make(chan struct{})
 
 			var wrapperStatus WrapperStatus
@@ -436,9 +438,12 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				defer close(done)
 				for {
 					select {
-					case wrapperStatus = <-chanWrapperStatus:
-					case wrapperError = <-chanWrapperError:
-						return
+					case wd := <-chanWrapperData:
+						wrapperStatus = wd.WrapperStatus
+						wrapperError = wd.Err
+						if wd.Done {
+							return
+						}
 					}
 				}
 			}()
@@ -448,7 +453,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			}
 
 			t.Log("start the process")
-			go p.do(chanWrapperStatus, chanWrapperError)
+			go p.do(chanWrapperData)
 
 			t.Log("wait to ensure the process is running")
 			time.Sleep(10 * time.Millisecond)
@@ -633,7 +638,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			logger.Configure("test", "ERROR")
+			logger.Configure(os.Stdout, "test", "ERROR")
 			// override the standard restartInterval for the tests
 			oldRestartInterval := restartInterval
 			restartInterval = 50 * time.Millisecond
@@ -651,8 +656,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 				restart:      tt.fields.restart,
 			}
 
-			chanWrapperStatus := make(chan WrapperStatus)
-			chanWrapperError := make(chan error)
+			chanWrapperData := make(chan WrapperData)
 			done := make(chan struct{})
 
 			var wrapperStatus WrapperStatus
@@ -661,9 +665,12 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 				defer close(done)
 				for {
 					select {
-					case wrapperStatus = <-chanWrapperStatus:
-					case wrapperError = <-chanWrapperError:
-						return
+					case wd := <-chanWrapperData:
+						wrapperStatus = wd.WrapperStatus
+						wrapperError = wd.Err
+						if wd.Done {
+							return
+						}
 					}
 				}
 			}()
@@ -673,7 +680,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			}
 
 			t.Log("start the process")
-			go p.do(chanWrapperStatus, chanWrapperError)
+			go p.do(chanWrapperData)
 
 			t.Log("wait to ensure the process is running")
 			time.Sleep(10 * time.Millisecond)
