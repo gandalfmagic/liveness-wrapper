@@ -23,6 +23,21 @@ type server struct {
 	server        *http.Server
 }
 
+var httpServerShutdown = func(ctx context.Context, server *http.Server) {
+
+	logger.Info("shutting down the http server...")
+
+	ctxShutdown, shutdownCancel := context.WithTimeout(ctx, 5*time.Second)
+	defer shutdownCancel()
+
+	server.SetKeepAlivesEnabled(false)
+	if err := server.Shutdown(ctxShutdown); err != nil {
+		logger.Fatal("could not shut down the http server: %s", err)
+	}
+
+	logger.Info("http server shutdown complete...")
+}
+
 func NewServer(ctx context.Context, addr string, pingInterval time.Duration) Server {
 
 	s := &server{
@@ -57,7 +72,7 @@ func (s *server) do() {
 	timer := time.NewTimer(s.pingInterval)
 
 	isPingAlive := true
-	isExternalAlive := true
+	isExternalAlive := false
 
 	for {
 		select {
@@ -65,7 +80,7 @@ func (s *server) do() {
 			logger.Debug("http server context is closing")
 			s.isReady = false
 			timer.Stop()
-			s.shutdown()
+			httpServerShutdown(s.ctx, s.server)
 			return
 
 		case isExternalAlive = <-s.externalAlive:
@@ -106,37 +121,24 @@ func (s *server) do() {
 	}
 }
 
-func (s *server) shutdown() {
-
-	logger.Info("shutting down the http server...")
-
-	ctxShutdown, shutdownCancel := context.WithTimeout(s.ctx, 5*time.Second)
-	defer shutdownCancel()
-
-	s.server.SetKeepAlivesEnabled(false)
-	if err := s.server.Shutdown(ctxShutdown); err != nil {
-		logger.Fatal("could not shut down the http server: %s", err)
-	}
-
-	logger.Info("http server shutdown complete...")
-}
-
 func (s *server) Start() (chan<- bool, <-chan struct{}) {
+	isReady := make(chan struct{})
+	go s.do()
 
 	serverDone := make(chan struct{})
-
 	go func() {
-
 		defer close(serverDone)
-		s.updateReady <- true
 		logger.Info("starting http server on %s...", s.server.Addr)
+		s.updateReady <- true
+		close(isReady)
 
 		if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Error("cannot bind http server on %s: %s", s.server.Addr, err)
 		}
 	}()
 
-	go s.do()
+	// Make sure the main process is ready before returning
+	<-isReady
 
 	return s.externalAlive, serverDone
 }

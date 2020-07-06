@@ -36,20 +36,20 @@ jobs:
         with:
           # Required: the version of golangci-lint is required and must be specified
           # without patch version: we always use the latest patch version.
-          version: v1.27
+          version: v1.28
 
       - name: Test
         run: go test -v -covermode=count -coverprofile=coverage.out ./...
-      #- name: Convert coverage to lcov
-      #  uses: jandelgado/gcov2lcov-action@v1.0.0
-      #  with:
-      #    infile: coverage.out
-      #    outfile: coverage.lcov
-      #- name: Coveralls
-      #  uses: coverallsapp/github-action@v1.0.1
-      #  with:
-      #    github-token: ${{ secrets.github_token }}
-      #    path-to-lcov: coverage.lcov
+      - name: Convert coverage to lcov
+        uses: jandelgado/gcov2lcov-action@v1.0.0
+        with:
+          infile: coverage.out
+          outfile: coverage.lcov
+      - name: Coveralls
+        uses: coverallsapp/github-action@v1.0.1
+        with:
+          github-token: ${{ secrets.github_token }}
+          path-to-lcov: coverage.lcov
 
       - name: Build
         run: |
