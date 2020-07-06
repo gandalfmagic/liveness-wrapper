@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -10,6 +9,10 @@ import (
 	"github.com/jcelliott/lumber"
 )
 
+type consoleLogger *lumber.ConsoleLogger
+
+var logger consoleLogger
+
 func CheckFatal(message string, err error) {
 	if err != nil {
 		Fatal(message+": ", err)
@@ -17,59 +20,64 @@ func CheckFatal(message string, err error) {
 }
 
 func Fatal(format string, v ...interface{}) {
-	lumber.Fatal(format, v...)
+	getLogger().Fatal(format, v...)
 	os.Exit(1)
 }
 
-func ErrorWithStack(format string, stack []byte, v ...interface{}) {
-	format = fmt.Sprintf("%s\n%s", format, stack)
-	lumber.Error(format, v...)
-}
-
 func Error(format string, v ...interface{}) {
-	lumber.Error(format, v...)
+	getLogger().Error(format, v...)
 }
 
 func Warn(format string, v ...interface{}) {
-	lumber.Warn(format, v...)
+	getLogger().Warn(format, v...)
 }
 
 func Info(format string, v ...interface{}) {
-	lumber.Info(format, v...)
+	getLogger().Info(format, v...)
 }
 
 func Debug(format string, v ...interface{}) {
-	lumber.Debug(format, v...)
+	getLogger().Debug(format, v...)
 }
 
 func HttpError(r *http.Request, status int) {
-	lumber.Error("%s %s \"%s\" %d \"%s\" \"%s\"", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent())
+	getLogger().Error("%s %s \"%s\" %d \"%s\" \"%s\"", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent())
 }
 
 func HttpWarn(r *http.Request, status int) {
-	lumber.Warn("%s %s \"%s\" %d \"%s\" \"%s\"", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent())
+	getLogger().Warn("%s %s \"%s\" %d \"%s\" \"%s\"", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent())
 }
 
 func HttpInfo(r *http.Request, status int) {
-	lumber.Info("%s %s \"%s\" %d \"%s\" \"%s\"", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent())
+	getLogger().Info("%s %s \"%s\" %d \"%s\" \"%s\"", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent())
 }
 
 func HttpDebug(r *http.Request, status int) {
-	lumber.Debug("%s %s \"%s\" %d \"%s\" \"%s\"", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent())
+	getLogger().Debug("%s %s \"%s\" %d \"%s\" \"%s\"", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent())
 }
 
 func HttpDebugWithDuration(r *http.Request, status int, duration time.Duration) {
-	lumber.Debug("%s %s \"%s\" %d \"%s\" \"%s\" %s", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent(), duration)
+	getLogger().Debug("%s %s \"%s\" %d \"%s\" \"%s\" %s", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent(), duration)
 }
 
-func Configure(prefix, level string) {
+func Configure(out io.WriteCloser, prefix, level string) {
 	// convert the log level
 	logLvl := lumber.LvlInt(level)
 
-	// configure the logger
-	lumber.Prefix("[" + prefix + "]")
-	lumber.Level(logLvl)
-	lumber.Debug("logger configured to console output")
+	if logger == nil {
+		logger = lumber.NewBasicLogger(out, logLvl)
+	}
+	(*lumber.ConsoleLogger)(logger).Level(logLvl)
+	(*lumber.ConsoleLogger)(logger).Prefix("[" + prefix + "]")
+}
+
+func getLogger() *lumber.ConsoleLogger {
+	if logger == nil {
+		logger = lumber.NewConsoleLogger(lumber.INFO)
+		return logger
+	}
+
+	return logger
 }
 
 type logInfoWriter struct {
@@ -82,7 +90,7 @@ func NewLogInfoWriter(prefix string) io.Writer {
 }
 
 func (lw logInfoWriter) Write(p []byte) (n int, err error) {
-	lumber.Info(lw.prefix + ": " + string(p))
+	getLogger().Info(lw.prefix + ": " + string(p))
 	return len(p), nil
 }
 
@@ -96,7 +104,7 @@ func NewLogErrorWriter(prefix string) io.Writer {
 }
 
 func (lw logErrorWriter) Write(p []byte) (n int, err error) {
-	lumber.Error(lw.prefix + ": " + string(p))
+	getLogger().Error(lw.prefix + ": " + string(p))
 	return len(p), nil
 }
 
