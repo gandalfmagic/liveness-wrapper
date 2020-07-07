@@ -142,7 +142,7 @@ func (p *wrapperHandler) doRunError(err error) (status WrapperStatus, processExi
 	} else {
 		status = WrapperStatusStopped
 
-		logger.Debugf("the wrapped process has ended without errors")
+		logger.Debugf("wrapped process ended without errors")
 	}
 
 	return
@@ -159,7 +159,7 @@ func (p *wrapperHandler) doRestart(runError chan error, loggedErrors chan int) (
 
 	status = WrapperStatusRunning
 
-	logger.Infof("the wrapped process %s has started", p.path)
+	logger.Infof("wrapped process %s started", p.path)
 
 	return
 }
@@ -231,7 +231,7 @@ func (p *wrapperHandler) do(chanWrapperData chan<- WrapperData, chanWrapperDone 
 			logger.Debugf("received the signal to close the wrapped process context")
 
 			if restartTimer.Stop() {
-				logger.Debugf("the wrapped process was scheduled, but not started, exiting...")
+				logger.Debugf("wrapped process is scheduled, but not started yes, exiting now")
 				return
 			}
 
@@ -239,7 +239,7 @@ func (p *wrapperHandler) do(chanWrapperData chan<- WrapperData, chanWrapperDone 
 			status = WrapperStatusError
 			chanWrapperData <- WrapperData{status, nil, false}
 
-			logger.Debugf("the wrapped process logged an error: %d bytes", n)
+			logger.Debugf("wrapped process logged an error: %d bytes", n)
 
 		case err := <-runError:
 			status, processExitStatus, processError = p.doRunError(err)
@@ -250,7 +250,7 @@ func (p *wrapperHandler) do(chanWrapperData chan<- WrapperData, chanWrapperDone 
 				restartTimer = time.NewTimer(p.restartInterval)
 				p.restartInterval *= 2
 			} else {
-				logger.Debugf("the wrapped process is completed, exiting now...")
+				logger.Debugf("wrapped process is completed, exiting now...")
 				return
 			}
 		}
