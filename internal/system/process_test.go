@@ -224,6 +224,7 @@ func Test_wrapperHandler_do(t *testing.T) {
 			}
 
 			chanWrapperData := make(chan WrapperData)
+			chanWrapperDone := make(chan struct{})
 			done := make(chan struct{})
 
 			var wrapperStatus WrapperStatus
@@ -244,7 +245,7 @@ func Test_wrapperHandler_do(t *testing.T) {
 			}
 
 			t.Log("start the process")
-			go p.do(chanWrapperData)
+			go p.do(chanWrapperData, chanWrapperDone)
 
 			t.Log("wait to ensure the process is running")
 			time.Sleep(10 * time.Millisecond)
@@ -254,6 +255,7 @@ func Test_wrapperHandler_do(t *testing.T) {
 			}
 
 			<-done
+			<-chanWrapperDone
 			time.Sleep(100 * time.Millisecond)
 			if tt.want.statusAfterDone != wrapperStatus {
 				t.Errorf("expected wrapperStatus != %v, got %v", tt.want.statusAfterDone, wrapperStatus)
@@ -419,6 +421,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			}
 
 			chanWrapperData := make(chan WrapperData)
+			chanWrapperDone := make(chan struct{})
 			done := make(chan struct{})
 
 			var wrapperStatus WrapperStatus
@@ -439,7 +442,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			}
 
 			t.Log("start the process")
-			go p.do(chanWrapperData)
+			go p.do(chanWrapperData, chanWrapperDone)
 
 			t.Log("wait to ensure the process is running")
 			time.Sleep(10 * time.Millisecond)
@@ -467,6 +470,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			t.Log("cancel the context to terminate the process")
 			cancel()
 			<-done
+			<-chanWrapperDone
 			if !tt.want.err && wrapperStatus != WrapperStatusStopped {
 				t.Errorf("expected wrapperStatus != WrapperStatusStopped, got %v", wrapperStatus)
 			}
@@ -637,6 +641,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			}
 
 			chanWrapperData := make(chan WrapperData)
+			chanWrapperDone := make(chan struct{})
 			done := make(chan struct{})
 
 			var wrapperStatus WrapperStatus
@@ -657,7 +662,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			}
 
 			t.Log("start the process")
-			go p.do(chanWrapperData)
+			go p.do(chanWrapperData, chanWrapperDone)
 
 			t.Log("wait to ensure the process is running")
 			time.Sleep(10 * time.Millisecond)
@@ -692,6 +697,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			t.Log("cancel the context to terminate the process")
 			cancel()
 			<-done
+			<-chanWrapperDone
 			if !tt.want.err && wrapperStatus != WrapperStatusStopped {
 				t.Errorf("expected wrapperStatus != WrapperStatusStopped, got %v", wrapperStatus)
 			}

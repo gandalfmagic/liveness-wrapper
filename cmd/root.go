@@ -147,6 +147,7 @@ type runner struct {
 	updateAlive chan<- bool
 	updateReady chan<- bool
 	wrapperData <-chan system.WrapperData
+	wrapperDone <-chan struct{}
 }
 
 func (r *runner) wait(cancelWrapper, cancelServer context.CancelFunc, c <-chan os.Signal) error {
@@ -175,8 +176,8 @@ func (r *runner) wait(cancelWrapper, cancelServer context.CancelFunc, c <-chan o
 				r.updateReady <- false
 
 				cancelWrapper()
+				<-r.wrapperDone
 				cancelServer()
-
 				<-r.serverDone
 
 				return ws.Err
@@ -195,16 +196,17 @@ func run(_ *cobra.Command, _ []string) error {
 	ctx, cancelWrapper := context.WithCancel(context.Background())
 
 	// start the wrapped process
-	process := system.NewWrapperHandler(ctx, getRestartMode(), viper.GetBool("process.hide-stdout"),
+	wrapper := system.NewWrapperHandler(ctx, getRestartMode(), viper.GetBool("process.hide-stdout"),
 		viper.GetBool("process.hide-stderr"), viper.GetBool("process.fail-on-stderr"),
 		viper.GetString("process.path"), viper.GetStringSlice("process.args")...)
-	wrapperData := process.Start()
+	wrapperData, wrapperDone := wrapper.Start()
 
 	r := &runner{
 		serverDone:  serverDone,
 		updateAlive: updateAlive,
 		updateReady: updateReady,
 		wrapperData: wrapperData,
+		wrapperDone: wrapperDone,
 	}
 
 	// create the channel to catch SIGINT signal

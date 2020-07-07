@@ -32,7 +32,7 @@ type WrapperData struct {
 }
 
 type WrapperHandler interface {
-	Start() <-chan WrapperData
+	Start() (<-chan WrapperData, <-chan struct{})
 }
 
 type wrapperHandler struct {
@@ -83,11 +83,13 @@ func NewWrapperHandler(ctx context.Context, restart WrapperRestartMode, hideStdO
 //     on this channel the wrapped process finally ended, the
 //     main process of the object will returns and all the
 //     channels will be closed
-func (p *wrapperHandler) Start() <-chan WrapperData {
+func (p *wrapperHandler) Start() (<-chan WrapperData, <-chan struct{}) {
 	chanWrapperData := make(chan WrapperData)
-	go p.do(chanWrapperData)
+	chanWrapperDone := make(chan struct{})
 
-	return chanWrapperData
+	go p.do(chanWrapperData, chanWrapperDone)
+
+	return chanWrapperData, chanWrapperDone
 }
 
 // run executes a new instance of the wrapped process and
@@ -179,8 +181,8 @@ func (p *wrapperHandler) canRestart(contextIsCanceling bool, exitStatus int) boo
 	return false
 }
 
-func (p *wrapperHandler) do(chanWrapperData chan<- WrapperData) {
-
+func (p *wrapperHandler) do(chanWrapperData chan<- WrapperData, chanWrapperDone chan<- struct{}) {
+	defer close(chanWrapperDone)
 	defer close(chanWrapperData)
 
 	var processError error

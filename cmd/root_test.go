@@ -28,13 +28,14 @@ func Test_runner_wait(t *testing.T) {
 
 		// start the wrapped process
 		process := system.NewWrapperHandler(ctx, system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "cmd/test.sh"))
-		wrapperData := process.Start()
+		wrapperData, wrapperDone := process.Start()
 
 		r := &runner{
 			serverDone:  serverDone,
 			updateAlive: updateAlive,
 			updateReady: updateReady,
 			wrapperData: wrapperData,
+			wrapperDone: wrapperDone,
 		}
 
 		c := make(chan os.Signal, 1)
@@ -80,13 +81,14 @@ func Test_runner_wait(t *testing.T) {
 
 		// start the wrapped process
 		process := system.NewWrapperHandler(ctx, system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "cmd/error_10.sh"))
-		wrapperData := process.Start()
+		wrapperData, wrapperDone := process.Start()
 
 		r := &runner{
 			serverDone:  serverDone,
 			updateAlive: updateAlive,
 			updateReady: updateReady,
 			wrapperData: wrapperData,
+			wrapperDone: wrapperDone,
 		}
 
 		c := make(chan os.Signal, 1)
@@ -133,13 +135,14 @@ func Test_runner_wait(t *testing.T) {
 
 		// start the wrapped process
 		process := system.NewWrapperHandler(ctx, system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "cmd/test.sh"))
-		wrapperData := process.Start()
+		wrapperData, wrapperDone := process.Start()
 
 		r := &runner{
 			serverDone:  serverDone,
 			updateAlive: updateAlive,
 			updateReady: updateReady,
 			wrapperData: wrapperData,
+			wrapperDone: wrapperDone,
 		}
 
 		c := make(chan os.Signal, 1)
@@ -189,13 +192,14 @@ func Test_runner_wait(t *testing.T) {
 
 		// start the wrapped process
 		process := system.NewWrapperHandler(ctx, system.WrapperRestartOnError, false, false, false, filepath.Join(testDirectory, "cmd/error_10.sh"))
-		wrapperData := process.Start()
+		wrapperData, wrapperDone := process.Start()
 
 		r := &runner{
 			serverDone:  serverDone,
 			updateAlive: updateAlive,
 			updateReady: updateReady,
 			wrapperData: wrapperData,
+			wrapperDone: wrapperDone,
 		}
 
 		c := make(chan os.Signal, 1)
@@ -259,13 +263,14 @@ func Test_runner_wait(t *testing.T) {
 
 		// start the wrapped process
 		process := system.NewWrapperHandler(ctx, system.WrapperRestartOnError, false, false, false, filepath.Join(testDirectory, "cmd/error_10.sh"))
-		wrapperData := process.Start()
+		wrapperData, wrapperDone := process.Start()
 
 		r := &runner{
 			serverDone:  serverDone,
 			updateAlive: updateAlive,
 			updateReady: updateReady,
 			wrapperData: wrapperData,
+			wrapperDone: wrapperDone,
 		}
 
 		c := make(chan os.Signal, 1)
@@ -343,13 +348,14 @@ func Test_runner_wait(t *testing.T) {
 
 		// start the wrapped process
 		process := system.NewWrapperHandler(ctx, system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "cmd/test.sh"))
+		wrapperData, wrapperDone := process.Start()
 
-		wrapperData := process.Start()
 		r := &runner{
 			serverDone:  serverDone,
 			updateAlive: updateAlive,
 			updateReady: updateReady,
 			wrapperData: wrapperData,
+			wrapperDone: wrapperDone,
 		}
 
 		c := make(chan os.Signal, 1)
