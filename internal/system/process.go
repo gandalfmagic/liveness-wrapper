@@ -36,18 +36,15 @@ type WrapperHandler interface {
 }
 
 type wrapperHandler struct {
-	arg          []string
-	ctx          context.Context
-	failOnStdErr bool
-	hideStdErr   bool
-	hideStdOut   bool
-	path         string
-	restart      WrapperRestartMode
+	arg             []string
+	ctx             context.Context
+	failOnStdErr    bool
+	hideStdErr      bool
+	hideStdOut      bool
+	path            string
+	restart         WrapperRestartMode
+	restartInterval time.Duration
 }
-
-var (
-	restartInterval = 1 * time.Second
-)
 
 // NewWrapperStatus creates a new process wrapper and returns it
 // Parameters:
@@ -64,13 +61,14 @@ func NewWrapperHandler(ctx context.Context, restart WrapperRestartMode, hideStdO
 	path string, arg ...string) WrapperHandler {
 
 	p := &wrapperHandler{
-		arg:          arg,
-		ctx:          ctx,
-		failOnStdErr: failOnStdErr,
-		hideStdErr:   hideStdErr,
-		hideStdOut:   hideStdOut,
-		path:         path,
-		restart:      restart,
+		arg:             arg,
+		ctx:             ctx,
+		failOnStdErr:    failOnStdErr,
+		hideStdErr:      hideStdErr,
+		hideStdOut:      hideStdOut,
+		path:            path,
+		restart:         restart,
+		restartInterval: 1 * time.Second,
 	}
 
 	return p
@@ -246,9 +244,9 @@ func (p *wrapperHandler) do(chanWrapperData chan<- WrapperData) {
 
 			// check if the process must be restarted or not
 			if p.canRestart(contextDone, processExitStatus) {
-				logger.Debug("the wrapped process will restart in %d seconds...", restartInterval/time.Second)
-				restartTimer = time.NewTimer(restartInterval)
-				restartInterval *= 2
+				logger.Debug("the wrapped process will restart in %d seconds...", p.restartInterval/time.Second)
+				restartTimer = time.NewTimer(p.restartInterval)
+				p.restartInterval *= 2
 			} else {
 				logger.Debug("the wrapped process is completed, exiting now...")
 				return

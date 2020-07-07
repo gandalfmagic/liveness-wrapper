@@ -412,21 +412,18 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			// override the standard restartInterval for the tests
-			oldRestartInterval := restartInterval
-			restartInterval = 50 * time.Millisecond
-
 			// create the context
 			ctx, cancel := context.WithCancel(context.Background())
 
 			p := &wrapperHandler{
-				arg:          tt.fields.arg,
-				ctx:          ctx,
-				failOnStdErr: tt.fields.failOnStdErr,
-				hideStdErr:   tt.fields.hideStdErr,
-				hideStdOut:   tt.fields.hideStdOut,
-				path:         tt.fields.path,
-				restart:      tt.fields.restart,
+				arg:             tt.fields.arg,
+				ctx:             ctx,
+				failOnStdErr:    tt.fields.failOnStdErr,
+				hideStdErr:      tt.fields.hideStdErr,
+				hideStdOut:      tt.fields.hideStdOut,
+				path:            tt.fields.path,
+				restart:         tt.fields.restart,
+				restartInterval: 50 * time.Millisecond,
 			}
 
 			chanWrapperData := make(chan WrapperData)
@@ -496,9 +493,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			if !tt.want.err && wrapperError != nil {
 				t.Errorf("no error expected, got %v", wrapperError)
 			}
-
-			// restore the original restartInterval value
-			restartInterval = oldRestartInterval
 		})
 	}
 }
@@ -639,21 +633,19 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			logger.Configure(os.Stdout, "test", "ERROR")
-			// override the standard restartInterval for the tests
-			oldRestartInterval := restartInterval
-			restartInterval = 50 * time.Millisecond
 
 			// create the context
 			ctx, cancel := context.WithCancel(context.Background())
 
 			p := &wrapperHandler{
-				arg:          tt.fields.arg,
-				ctx:          ctx,
-				failOnStdErr: tt.fields.failOnStdErr,
-				hideStdErr:   tt.fields.hideStdErr,
-				hideStdOut:   tt.fields.hideStdOut,
-				path:         tt.fields.path,
-				restart:      tt.fields.restart,
+				arg:             tt.fields.arg,
+				ctx:             ctx,
+				failOnStdErr:    tt.fields.failOnStdErr,
+				hideStdErr:      tt.fields.hideStdErr,
+				hideStdOut:      tt.fields.hideStdOut,
+				path:            tt.fields.path,
+				restart:         tt.fields.restart,
+				restartInterval: 50 * time.Millisecond,
 			}
 
 			chanWrapperData := make(chan WrapperData)
@@ -730,9 +722,6 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			if !tt.want.err && wrapperError != nil {
 				t.Errorf("no error expected, got %v", wrapperError)
 			}
-
-			// restore the original restartInterval value
-			restartInterval = oldRestartInterval
 		})
 	}
 }
