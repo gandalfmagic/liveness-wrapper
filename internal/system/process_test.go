@@ -449,7 +449,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			}
 
 			t.Log("wait for the process exit for the first time")
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(410 * time.Millisecond)
 
 			if wrapperStatus != tt.want.statusAfterFirstExit {
 				t.Errorf("expected wrapperStatus == %v, got %v", tt.want.statusAfterFirstExit, wrapperStatus)
