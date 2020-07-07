@@ -49,7 +49,7 @@ func Test_runner_wait(t *testing.T) {
 		}()
 
 		t.Log("wait for the process to start")
-		time.Sleep(1 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 
 		t.Log("testing the endpoints again")
 		var rsp *http.Response
@@ -102,7 +102,7 @@ func Test_runner_wait(t *testing.T) {
 		}()
 
 		t.Log("wait for the process to start")
-		time.Sleep(1 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 
 		t.Log("testing the endpoints")
 		var rsp *http.Response
@@ -156,7 +156,7 @@ func Test_runner_wait(t *testing.T) {
 		}()
 
 		t.Log("wait for the process to start")
-		time.Sleep(1 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 
 		t.Log("testing the endpoints")
 		var rsp *http.Response
@@ -213,7 +213,7 @@ func Test_runner_wait(t *testing.T) {
 		}()
 
 		t.Log("wait for the process to start")
-		time.Sleep(1 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 
 		t.Log("testing the endpoints")
 		var rsp *http.Response
@@ -284,7 +284,7 @@ func Test_runner_wait(t *testing.T) {
 		}()
 
 		t.Log("wait for the process to start")
-		time.Sleep(1 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 
 		t.Log("testing the endpoints")
 		var rsp *http.Response
@@ -369,7 +369,7 @@ func Test_runner_wait(t *testing.T) {
 		}()
 
 		t.Log("wait for the process to start")
-		time.Sleep(1 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 
 		t.Log("testing the endpoints")
 		var rsp *http.Response
