@@ -2,7 +2,6 @@ package http
 
 import (
 	"net/http"
-	"runtime/debug"
 	"time"
 
 	"github.com/gandalfmagic/liveness-wrapper/pkg/logger"
@@ -35,29 +34,23 @@ func (rw *responseWriter) WriteHeader(code int) {
 func LoggingMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-			defer func() {
-				if err := recover(); err != nil {
-					w.WriteHeader(http.StatusInternalServerError)
-					logger.ErrorWithStack("internal server error:", debug.Stack(), err)
-				}
-			}()
-
 			start := time.Now()
 			wrapped := wrapResponseWriter(w)
 			next.ServeHTTP(wrapped, r)
-			logger.HttpDebugWithDuration(r, wrapped.status, time.Since(start))
+			logger.HTTPDebugWithDuration(r, wrapped.status, time.Since(start))
 		}
 
 		return http.HandlerFunc(fn)
 	}
 }
 
-func inStringSlice(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
+func inStringSlice(slice []string, str string) bool {
+	for _, s := range slice {
+		if s == str {
 			return true
 		}
 	}
+
 	return false
 }
 

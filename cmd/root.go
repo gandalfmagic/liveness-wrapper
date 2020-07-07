@@ -27,7 +27,7 @@ var (
 	version = "v0.0.0"
 	commit  = "HEAD"
 
-	// HoarderCmd ...
+	// RootCmd ...
 	RootCmd = &cobra.Command{
 		Long:              internal.RootDescriptionLong,
 		PersistentPreRunE: persistentPreRunE,
@@ -49,6 +49,7 @@ func init() {
 	RootCmd.PersistentFlags().Bool("process-fail-on-stderr", false, "Mark the wrapped process as failed if it writes logs on stderr")
 	RootCmd.PersistentFlags().StringP("server-address", "a", ":6060", "Bind address for the http server")
 	RootCmd.PersistentFlags().DurationP("server-ping-timeout", "t", 10*time.Minute, "Ping endpoint timeout, use 0 to disable")
+	RootCmd.PersistentFlags().DurationP("server-shutdown-timeout", "s", 15*time.Second, "HTTP server shutdown timeout")
 	RootCmd.PersistentFlags().String("log-level", "WARN", "Output level of logs (TRACE, DEBUG, INFO, WARN, ERROR, FATAL)")
 
 	// cli-only flags
@@ -66,11 +67,11 @@ func init() {
 
 	_ = viper.BindPFlag("server.address", RootCmd.PersistentFlags().Lookup("server-address"))
 	_ = viper.BindPFlag("server.ping-timeout", RootCmd.PersistentFlags().Lookup("server-ping-timeout"))
+	_ = viper.BindPFlag("server.shutdown-timeout", RootCmd.PersistentFlags().Lookup("server-shutdown-timeout"))
 	_ = viper.BindPFlag("log.level", RootCmd.PersistentFlags().Lookup("log-level"))
 }
 
 func convertToAbsProjectDirectory() {
-
 	dir := viper.GetString("project.directory")
 	if dir != "" {
 		absDir, err := filepath.Abs(dir)
@@ -83,7 +84,6 @@ func convertToAbsProjectDirectory() {
 }
 
 func printVersion() {
-
 	if showVersion {
 		fmt.Printf("liveness-wrapper %s -- %s\n", version, commit)
 		os.Exit(0)
@@ -91,23 +91,23 @@ func printVersion() {
 }
 
 func persistentPreRunE(_ *cobra.Command, _ []string) error {
-
 	printVersion()
+
 	if err := readConfig(); err != nil {
 		if e, ok := err.(viper.ConfigFileNotFoundError); ok {
-			logger.Info("no configuration file found: %s", e)
+			logger.Infof("no configuration file found: %s", e)
 		} else {
 			return err
 		}
 	}
-	logger.Configure(internal.RootName, viper.GetString("log.level"))
+
+	logger.Configure(os.Stdout, internal.RootName, viper.GetString("log.level"))
 	convertToAbsProjectDirectory()
 
 	return nil
 }
 
 func readConfig() error {
-
 	if config != "" {
 		// Use config file from the flag
 		viper.SetConfigFile(config)
@@ -131,7 +131,6 @@ func readConfig() error {
 }
 
 func getRestartMode() system.WrapperRestartMode {
-
 	if viper.GetBool("process.restart-always") {
 		return system.WrapperRestartAlways
 	}
@@ -143,85 +142,78 @@ func getRestartMode() system.WrapperRestartMode {
 	return system.WrapperRestartNever
 }
 
-func do(processStatus <-chan system.WrapperStatus, updateAlive chan<- bool) chan<- struct{} {
-	done := make(chan struct{})
-
-	go func() {
-		defer close(updateAlive)
-		for {
-			select {
-			case s := <-processStatus:
-				// change the readiness state based on the process status
-				switch s {
-				case system.WrapperStatusError:
-					updateAlive <- false
-				case system.WrapperStatusRunning:
-					updateAlive <- true
-				case system.WrapperStatusStopped:
-					updateAlive <- false
-				}
-
-			case <-done:
-				return
-			}
-		}
-	}()
-
-	return done
+type runner struct {
+	serverDone  <-chan struct{}
+	updateAlive chan<- bool
+	updateReady chan<- bool
+	wrapperData <-chan system.WrapperData
+	wrapperDone <-chan struct{}
 }
 
-func wait(cancelFunc context.CancelFunc, serverDone <-chan struct{}, exitStatus <-chan error, done chan<- struct{}) error {
-	// create the channel to catch SIGINT signal
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	defer close(c)
+func (r *runner) wait(cancelWrapper, cancelServer context.CancelFunc, c <-chan os.Signal) error {
+	defer close(r.updateAlive)
+	defer close(r.updateReady)
 
-	defer close(done)
 	for {
 		select {
 		case <-c:
-			// if c receives data, then the a SIGINT signal was
-			// sent by the system, so we stop the process, and
-			// the http server and finally we return
-			cancelFunc()
-			<-serverDone
-			return <-exitStatus
+			r.updateReady <- false
 
-		case exitStatus := <-exitStatus:
-			// if we receive an exitStatus, then the process has stopped
-			// (without being restarted), so we stop the http server
-			// and then we return
-			cancelFunc()
-			<-serverDone
-			return exitStatus
+			cancelWrapper()
 
-		case <-serverDone:
-			// if serverDone is closed, then the http server has stopped
-			// because of an error, so we stop the wrapped process and
-			// then we return
-			cancelFunc()
-			return <-exitStatus
+		case ws := <-r.wrapperData:
+			// change the liveness state based on the process status
+			switch ws.WrapperStatus {
+			case system.WrapperStatusError:
+				r.updateAlive <- false
+			case system.WrapperStatusRunning:
+				r.updateAlive <- true
+			case system.WrapperStatusStopped:
+				r.updateAlive <- false
+			}
+
+			if ws.Done {
+				r.updateReady <- false
+
+				cancelWrapper()
+				<-r.wrapperDone
+				cancelServer()
+				<-r.serverDone
+
+				return ws.Err
+			}
 		}
-
 	}
 }
 
 func run(_ *cobra.Command, _ []string) error {
-	ctx, cancelFunc := context.WithCancel(context.Background())
+	ctx, cancelServer := context.WithCancel(context.Background())
 
 	// create the http server
-	server := http.NewServer(ctx, viper.GetString("server.address"), viper.GetDuration("server.ping-timeout"))
-	updateAlive, serverDone := server.Start()
+	server := http.NewServer(ctx, viper.GetString("server.address"), viper.GetDuration("server.shutdown-timeout"), viper.GetDuration("server.ping-timeout"))
+	updateReady, updateAlive, serverDone := server.Start()
+
+	ctx, cancelWrapper := context.WithCancel(context.Background())
 
 	// start the wrapped process
-	exitStatus := make(chan error)
-	defer close(exitStatus)
-	process := system.NewWrapperHandler(ctx, getRestartMode(), viper.GetBool("process.hide-stdout"),
+	wrapper := system.NewWrapperHandler(ctx, getRestartMode(), viper.GetBool("process.hide-stdout"),
 		viper.GetBool("process.hide-stderr"), viper.GetBool("process.fail-on-stderr"),
 		viper.GetString("process.path"), viper.GetStringSlice("process.args")...)
-	processStatus := process.Start(exitStatus)
+	wrapperData, wrapperDone := wrapper.Start()
 
-	done := do(processStatus, updateAlive)
+	r := &runner{
+		serverDone:  serverDone,
+		updateAlive: updateAlive,
+		updateReady: updateReady,
+		wrapperData: wrapperData,
+		wrapperDone: wrapperDone,
+	}
 
-	return wait(cancelFunc, serverDone, exitStatus, done)
+	// create the channel to catch SIGINT signal
+	c := make(chan os.Signal, 1)
+	defer close(c)
+
+	signal.Notify(c, os.Interrupt)
+
+	return r.wait(cancelWrapper, cancelServer, c)
 }
