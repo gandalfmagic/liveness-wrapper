@@ -37,7 +37,7 @@ func LoggingMiddleware() func(http.Handler) http.Handler {
 			start := time.Now()
 			wrapped := wrapResponseWriter(w)
 			next.ServeHTTP(wrapped, r)
-			logger.HttpDebugWithDuration(r, wrapped.status, time.Since(start))
+			logger.HTTPDebugWithDuration(r, wrapped.status, time.Since(start))
 		}
 
 		return http.HandlerFunc(fn)
@@ -50,6 +50,7 @@ func inStringSlice(slice []string, str string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 

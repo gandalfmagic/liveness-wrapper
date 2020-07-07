@@ -125,7 +125,6 @@ func Test_wrapperHandler_canRestart(t *testing.T) {
 func Test_wrapperHandler_do(t *testing.T) {
 	type fields struct {
 		arg          []string
-		ctx          context.Context
 		failOnStdErr bool
 		hideStdErr   bool
 		hideStdOut   bool
@@ -214,12 +213,9 @@ func Test_wrapperHandler_do(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// create the context
-			ctx, _ := context.WithCancel(context.Background())
-
 			p := &wrapperHandler{
 				arg:          tt.fields.arg,
-				ctx:          ctx,
+				ctx:          context.Background(),
 				failOnStdErr: tt.fields.failOnStdErr,
 				hideStdErr:   tt.fields.hideStdErr,
 				hideStdOut:   tt.fields.hideStdOut,
@@ -234,14 +230,11 @@ func Test_wrapperHandler_do(t *testing.T) {
 			var wrapperError error
 			go func() {
 				defer close(done)
-				for {
-					select {
-					case wd := <-chanWrapperData:
-						wrapperStatus = wd.WrapperStatus
-						wrapperError = wd.Err
-						if wd.Done {
-							return
-						}
+				for wd := range chanWrapperData {
+					wrapperStatus = wd.WrapperStatus
+					wrapperError = wd.Err
+					if wd.Done {
+						return
 					}
 				}
 			}()
@@ -280,7 +273,6 @@ func Test_wrapperHandler_do(t *testing.T) {
 func Test_wrapperHandler_do_With_restart(t *testing.T) {
 	type fields struct {
 		arg          []string
-		ctx          context.Context
 		failOnStdErr bool
 		hideStdErr   bool
 		hideStdOut   bool
@@ -433,14 +425,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			var wrapperError error
 			go func() {
 				defer close(done)
-				for {
-					select {
-					case wd := <-chanWrapperData:
-						wrapperStatus = wd.WrapperStatus
-						wrapperError = wd.Err
-						if wd.Done {
-							return
-						}
+				for wd := range chanWrapperData {
+					wrapperStatus = wd.WrapperStatus
+					wrapperError = wd.Err
+					if wd.Done {
+						return
 					}
 				}
 			}()
@@ -500,7 +489,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 func Test_wrapperHandler_do_Log_error(t *testing.T) {
 	type fields struct {
 		arg          []string
-		ctx          context.Context
 		failOnStdErr bool
 		hideStdErr   bool
 		hideStdOut   bool
@@ -655,14 +643,11 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			var wrapperError error
 			go func() {
 				defer close(done)
-				for {
-					select {
-					case wd := <-chanWrapperData:
-						wrapperStatus = wd.WrapperStatus
-						wrapperError = wd.Err
-						if wd.Done {
-							return
-						}
+				for wd := range chanWrapperData {
+					wrapperStatus = wd.WrapperStatus
+					wrapperError = wd.Err
+					if wd.Done {
+						return
 					}
 				}
 			}()

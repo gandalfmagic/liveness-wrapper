@@ -15,48 +15,48 @@ var logger consoleLogger
 
 func CheckFatal(message string, err error) {
 	if err != nil {
-		Fatal(message+": ", err)
+		Fatalf(message+": ", err)
 	}
 }
 
-func Fatal(format string, v ...interface{}) {
+func Fatalf(format string, v ...interface{}) {
 	getLogger().Fatal(format, v...)
 	os.Exit(1)
 }
 
-func Error(format string, v ...interface{}) {
+func Errorf(format string, v ...interface{}) {
 	getLogger().Error(format, v...)
 }
 
-func Warn(format string, v ...interface{}) {
+func Warnf(format string, v ...interface{}) {
 	getLogger().Warn(format, v...)
 }
 
-func Info(format string, v ...interface{}) {
+func Infof(format string, v ...interface{}) {
 	getLogger().Info(format, v...)
 }
 
-func Debug(format string, v ...interface{}) {
+func Debugf(format string, v ...interface{}) {
 	getLogger().Debug(format, v...)
 }
 
-func HttpError(r *http.Request, status int) {
+func HTTPError(r *http.Request, status int) {
 	getLogger().Error("%s %s \"%s\" %d \"%s\" \"%s\"", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent())
 }
 
-func HttpWarn(r *http.Request, status int) {
+func HTTPWarn(r *http.Request, status int) {
 	getLogger().Warn("%s %s \"%s\" %d \"%s\" \"%s\"", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent())
 }
 
-func HttpInfo(r *http.Request, status int) {
+func HTTPInfo(r *http.Request, status int) {
 	getLogger().Info("%s %s \"%s\" %d \"%s\" \"%s\"", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent())
 }
 
-func HttpDebug(r *http.Request, status int) {
+func HTTPDebug(r *http.Request, status int) {
 	getLogger().Debug("%s %s \"%s\" %d \"%s\" \"%s\"", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent())
 }
 
-func HttpDebugWithDuration(r *http.Request, status int, duration time.Duration) {
+func HTTPDebugWithDuration(r *http.Request, status int, duration time.Duration) {
 	getLogger().Debug("%s %s \"%s\" %d \"%s\" \"%s\" %s", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent(), duration)
 }
 
@@ -67,6 +67,7 @@ func Configure(out io.WriteCloser, prefix, level string) {
 	if logger == nil {
 		logger = lumber.NewBasicLogger(out, logLvl)
 	}
+
 	(*lumber.ConsoleLogger)(logger).Level(logLvl)
 	(*lumber.ConsoleLogger)(logger).Prefix("[" + prefix + "]")
 }

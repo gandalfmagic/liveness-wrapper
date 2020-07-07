@@ -27,7 +27,7 @@ var (
 	version = "v0.0.0"
 	commit  = "HEAD"
 
-	// HoarderCmd ...
+	// RootCmd ...
 	RootCmd = &cobra.Command{
 		Long:              internal.RootDescriptionLong,
 		PersistentPreRunE: persistentPreRunE,
@@ -70,7 +70,6 @@ func init() {
 }
 
 func convertToAbsProjectDirectory() {
-
 	dir := viper.GetString("project.directory")
 	if dir != "" {
 		absDir, err := filepath.Abs(dir)
@@ -83,7 +82,6 @@ func convertToAbsProjectDirectory() {
 }
 
 func printVersion() {
-
 	if showVersion {
 		fmt.Printf("liveness-wrapper %s -- %s\n", version, commit)
 		os.Exit(0)
@@ -91,15 +89,16 @@ func printVersion() {
 }
 
 func persistentPreRunE(_ *cobra.Command, _ []string) error {
-
 	printVersion()
+
 	if err := readConfig(); err != nil {
 		if e, ok := err.(viper.ConfigFileNotFoundError); ok {
-			logger.Info("no configuration file found: %s", e)
+			logger.Infof("no configuration file found: %s", e)
 		} else {
 			return err
 		}
 	}
+
 	logger.Configure(os.Stdout, internal.RootName, viper.GetString("log.level"))
 	convertToAbsProjectDirectory()
 
@@ -107,7 +106,6 @@ func persistentPreRunE(_ *cobra.Command, _ []string) error {
 }
 
 func readConfig() error {
-
 	if config != "" {
 		// Use config file from the flag
 		viper.SetConfigFile(config)
@@ -131,7 +129,6 @@ func readConfig() error {
 }
 
 func getRestartMode() system.WrapperRestartMode {
-
 	if viper.GetBool("process.restart-always") {
 		return system.WrapperRestartAlways
 	}
@@ -150,14 +147,16 @@ type runner struct {
 	wrapperData <-chan system.WrapperData
 }
 
-func (r *runner) wait(cancelFuncProcess, cancelFuncHttp context.CancelFunc, c <-chan os.Signal) error {
+func (r *runner) wait(cancelWrapper, cancelServer context.CancelFunc, c <-chan os.Signal) error {
 	defer close(r.updateAlive)
 	defer close(r.updateReady)
+
 	for {
 		select {
 		case <-c:
 			r.updateReady <- false
-			cancelFuncProcess()
+
+			cancelWrapper()
 
 		case ws := <-r.wrapperData:
 			// change the liveness state based on the process status
@@ -172,9 +171,12 @@ func (r *runner) wait(cancelFuncProcess, cancelFuncHttp context.CancelFunc, c <-
 
 			if ws.Done {
 				r.updateReady <- false
-				cancelFuncProcess()
-				cancelFuncHttp()
+
+				cancelWrapper()
+				cancelServer()
+
 				<-r.serverDone
+
 				return ws.Err
 			}
 		}
@@ -182,13 +184,13 @@ func (r *runner) wait(cancelFuncProcess, cancelFuncHttp context.CancelFunc, c <-
 }
 
 func run(_ *cobra.Command, _ []string) error {
-	ctx, cancelFuncHttp := context.WithCancel(context.Background())
+	ctx, cancelServer := context.WithCancel(context.Background())
 
 	// create the http server
 	server := http.NewServer(ctx, viper.GetString("server.address"), viper.GetDuration("server.ping-timeout"))
 	updateReady, updateAlive, serverDone := server.Start()
 
-	ctx, cancelFuncProcess := context.WithCancel(context.Background())
+	ctx, cancelWrapper := context.WithCancel(context.Background())
 
 	// start the wrapped process
 	process := system.NewWrapperHandler(ctx, getRestartMode(), viper.GetBool("process.hide-stdout"),
@@ -205,8 +207,9 @@ func run(_ *cobra.Command, _ []string) error {
 
 	// create the channel to catch SIGINT signal
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
 	defer close(c)
 
-	return r.wait(cancelFuncProcess, cancelFuncHttp, c)
+	signal.Notify(c, os.Interrupt)
+
+	return r.wait(cancelWrapper, cancelServer, c)
 }
