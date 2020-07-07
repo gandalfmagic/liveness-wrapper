@@ -21,13 +21,13 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelFuncHttp := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 10*time.Minute)
+		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 10*time.Minute)
 		updateReady, updateAlive, serverDone := server.Start()
 
 		ctx, cancelFuncProcess := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(ctx, system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "test.sh"))
+		process := system.NewWrapperHandler(ctx, system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "cmd/test.sh"))
 		wrapperData := process.Start()
 
 		r := &runner{
@@ -48,7 +48,7 @@ func Test_runner_wait(t *testing.T) {
 		}()
 
 		t.Log("wait for the process to start")
-		time.Sleep(5 * time.Millisecond)
+		time.Sleep(1 * time.Millisecond)
 
 		t.Log("testing the endpoints again")
 		var rsp *http.Response
@@ -73,13 +73,13 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelFuncHttp := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 10*time.Minute)
+		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 10*time.Minute)
 		updateReady, updateAlive, serverDone := server.Start()
 
 		ctx, cancelFuncProcess := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(ctx, system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "error_10.sh"))
+		process := system.NewWrapperHandler(ctx, system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "cmd/error_10.sh"))
 		wrapperData := process.Start()
 
 		r := &runner{
@@ -100,7 +100,7 @@ func Test_runner_wait(t *testing.T) {
 		}()
 
 		t.Log("wait for the process to start")
-		time.Sleep(5 * time.Millisecond)
+		time.Sleep(1 * time.Millisecond)
 
 		t.Log("testing the endpoints")
 		var rsp *http.Response
@@ -123,16 +123,16 @@ func Test_runner_wait(t *testing.T) {
 	})
 
 	t.Run("SIGINT", func(t *testing.T) {
-		ctx, cancelFuncHttp := context.WithCancel(context.Background())
+		ctx, cancelServer := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 10*time.Minute)
+		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 10*time.Minute)
 		updateReady, updateAlive, serverDone := server.Start()
 
-		ctx, cancelFuncProcess := context.WithCancel(context.Background())
+		ctx, cancelWrapper := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(ctx, system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "test.sh"))
+		process := system.NewWrapperHandler(ctx, system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "cmd/test.sh"))
 		wrapperData := process.Start()
 
 		r := &runner{
@@ -149,11 +149,11 @@ func Test_runner_wait(t *testing.T) {
 		t.Log("execute the process")
 		chanErr := make(chan error)
 		go func() {
-			chanErr <- r.wait(cancelFuncProcess, cancelFuncHttp, c)
+			chanErr <- r.wait(cancelWrapper, cancelServer, c)
 		}()
 
 		t.Log("wait for the process to start")
-		time.Sleep(5 * time.Millisecond)
+		time.Sleep(1 * time.Millisecond)
 
 		t.Log("testing the endpoints")
 		var rsp *http.Response
@@ -171,17 +171,6 @@ func Test_runner_wait(t *testing.T) {
 		t.Log("send CTRL-C")
 		c <- os.Interrupt
 
-		t.Log("testing the endpoints again")
-		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
-		if rsp.StatusCode != 503 {
-			t.Errorf("Expected status code 503 on /ready, got %v", rsp.StatusCode)
-		}
-
-		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
-		if rsp.StatusCode != 200 {
-			t.Errorf("Expected status code 200 on /alive, got %v", rsp.StatusCode)
-		}
-
 		err := <-chanErr
 		if err == nil {
 			t.Error("an error was expected, got no one")
@@ -190,16 +179,16 @@ func Test_runner_wait(t *testing.T) {
 	})
 
 	t.Run("Restart_on_error_Exit_with_error_Kill_while_NOT_running", func(t *testing.T) {
-		ctx, cancelFuncHttp := context.WithCancel(context.Background())
+		ctx, cancelServer := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 10*time.Minute)
+		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 10*time.Minute)
 		updateReady, updateAlive, serverDone := server.Start()
 
-		ctx, cancelFuncProcess := context.WithCancel(context.Background())
+		ctx, cancelWrapper := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(ctx, system.WrapperRestartOnError, false, false, false, filepath.Join(testDirectory, "error_10.sh"))
+		process := system.NewWrapperHandler(ctx, system.WrapperRestartOnError, false, false, false, filepath.Join(testDirectory, "cmd/error_10.sh"))
 		wrapperData := process.Start()
 
 		r := &runner{
@@ -216,11 +205,11 @@ func Test_runner_wait(t *testing.T) {
 		t.Log("execute the process")
 		chanErr := make(chan error)
 		go func() {
-			chanErr <- r.wait(cancelFuncProcess, cancelFuncHttp, c)
+			chanErr <- r.wait(cancelWrapper, cancelServer, c)
 		}()
 
 		t.Log("wait for the process to start")
-		time.Sleep(5 * time.Millisecond)
+		time.Sleep(1 * time.Millisecond)
 
 		t.Log("testing the endpoints")
 		var rsp *http.Response
@@ -236,7 +225,7 @@ func Test_runner_wait(t *testing.T) {
 		}
 
 		t.Log("wait for the process to terminate with error")
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(310 * time.Millisecond) // 200ms for standard execution + 100ms for trap
 
 		t.Log("testing the endpoints")
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
@@ -263,13 +252,13 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelFuncHttp := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 10*time.Minute)
+		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 10*time.Minute)
 		updateReady, updateAlive, serverDone := server.Start()
 
 		ctx, cancelFuncProcess := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(ctx, system.WrapperRestartOnError, false, false, false, filepath.Join(testDirectory, "error_10.sh"))
+		process := system.NewWrapperHandler(ctx, system.WrapperRestartOnError, false, false, false, filepath.Join(testDirectory, "cmd/error_10.sh"))
 		wrapperData := process.Start()
 
 		r := &runner{
@@ -290,7 +279,7 @@ func Test_runner_wait(t *testing.T) {
 		}()
 
 		t.Log("wait for the process to start")
-		time.Sleep(5 * time.Millisecond)
+		time.Sleep(1 * time.Millisecond)
 
 		t.Log("testing the endpoints")
 		var rsp *http.Response
@@ -306,7 +295,7 @@ func Test_runner_wait(t *testing.T) {
 		}
 
 		t.Log("wait for the process to terminate with error")
-		time.Sleep(110 * time.Millisecond)
+		time.Sleep(310 * time.Millisecond) // 200ms for standard execution + 100ms for trap
 
 		t.Log("testing the endpoints")
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
@@ -347,15 +336,15 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelFuncHttp := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 20*time.Millisecond)
+		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 20*time.Millisecond)
 		updateReady, updateAlive, serverDone := server.Start()
 
 		ctx, cancelFuncProcess := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(ctx, system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "test.sh"))
-		wrapperData := process.Start()
+		process := system.NewWrapperHandler(ctx, system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "cmd/test.sh"))
 
+		wrapperData := process.Start()
 		r := &runner{
 			serverDone:  serverDone,
 			updateAlive: updateAlive,
@@ -374,7 +363,7 @@ func Test_runner_wait(t *testing.T) {
 		}()
 
 		t.Log("wait for the process to start")
-		time.Sleep(5 * time.Millisecond)
+		time.Sleep(1 * time.Millisecond)
 
 		t.Log("testing the endpoints")
 		var rsp *http.Response
@@ -434,8 +423,8 @@ func Test_runner_wait(t *testing.T) {
 			t.Errorf("Expected status code 200 on /alive, got %v", rsp.StatusCode)
 		}
 
-		t.Log("wait 18ms for the /ping timeout to expire")
-		time.Sleep(18 * time.Millisecond)
+		t.Log("wait 15ms for the /ping timeout to expire")
+		time.Sleep(15 * time.Millisecond)
 
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
 		if rsp.StatusCode != 200 {
@@ -447,8 +436,8 @@ func Test_runner_wait(t *testing.T) {
 			t.Errorf("Expected status code 200 on /alive, got %v", rsp.StatusCode)
 		}
 
-		t.Log("wait 2ms for the /ping timeout to expire")
-		time.Sleep(2 * time.Millisecond)
+		t.Log("wait 5ms for the /ping timeout to expire")
+		time.Sleep(5 * time.Millisecond)
 
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
 		if rsp.StatusCode != 200 {

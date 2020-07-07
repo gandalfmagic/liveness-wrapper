@@ -14,21 +14,22 @@ type Server interface {
 }
 
 type server struct {
-	ctx           context.Context
-	externalAlive chan bool
-	isAlive       bool
-	isReady       bool
-	pingChannel   chan bool
-	pingInterval  time.Duration
-	updateReady   chan bool
-	server        *http.Server
+	ctx             context.Context
+	externalAlive   chan bool
+	isAlive         bool
+	isReady         bool
+	pingChannel     chan bool
+	pingInterval    time.Duration
+	server          *http.Server
+	shutdownTimeout time.Duration
+	updateReady     chan bool
 }
 
-var httpServerShutdown = func(ctx context.Context, server *http.Server) {
+var httpServerShutdown = func(ctx context.Context, server *http.Server, shutdownTimeout time.Duration) {
 
 	logger.Infof("shutting down the http server...")
 
-	ctxShutdown, shutdownCancel := context.WithTimeout(ctx, 5*time.Second)
+	ctxShutdown, shutdownCancel := context.WithTimeout(ctx, shutdownTimeout)
 	defer shutdownCancel()
 
 	server.SetKeepAlivesEnabled(false)
@@ -39,13 +40,14 @@ var httpServerShutdown = func(ctx context.Context, server *http.Server) {
 	logger.Infof("http server shutdown complete...")
 }
 
-func NewServer(ctx context.Context, addr string, pingInterval time.Duration) Server {
+func NewServer(ctx context.Context, addr string, shutdownTimeout, pingInterval time.Duration) Server {
 	s := &server{
-		ctx:           ctx,
-		externalAlive: make(chan bool),
-		pingChannel:   make(chan bool),
-		pingInterval:  pingInterval,
-		updateReady:   make(chan bool),
+		ctx:             ctx,
+		externalAlive:   make(chan bool),
+		pingChannel:     make(chan bool),
+		pingInterval:    pingInterval,
+		shutdownTimeout: shutdownTimeout,
+		updateReady:     make(chan bool),
 	}
 
 	mux := http.NewServeMux()
@@ -67,7 +69,6 @@ func NewServer(ctx context.Context, addr string, pingInterval time.Duration) Ser
 
 func (s *server) do() {
 	defer close(s.pingChannel)
-	//defer close(s.updateReady)
 
 	timer := time.NewTimer(s.pingInterval)
 
@@ -82,7 +83,7 @@ func (s *server) do() {
 			s.isReady = false
 
 			timer.Stop()
-			httpServerShutdown(s.ctx, s.server)
+			httpServerShutdown(s.ctx, s.server, s.shutdownTimeout)
 
 			return
 

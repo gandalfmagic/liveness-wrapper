@@ -15,7 +15,7 @@ func Test_server_do(t *testing.T) {
 		// the mocked version closes a channel when it's called
 		oldHttpServerShutdown := httpServerShutdown
 		serverDone := make(chan struct{})
-		httpServerShutdown = func(ctx context.Context, server *http.Server) {
+		httpServerShutdown = func(context.Context, *http.Server, time.Duration) {
 			close(serverDone)
 		}
 
@@ -121,7 +121,7 @@ func Test_server_do(t *testing.T) {
 		// the mocked version closes a channel when it's called
 		oldHttpServerShutdown := httpServerShutdown
 		serverDone := make(chan struct{})
-		httpServerShutdown = func(ctx context.Context, server *http.Server) {
+		httpServerShutdown = func(context.Context, *http.Server, time.Duration) {
 			close(serverDone)
 		}
 
@@ -227,7 +227,7 @@ func TestServer(t *testing.T) {
 	t.Run("Graceful_shutdown", func(t *testing.T) {
 		logger.Configure(os.Stdout, "test", "ERROR")
 		ctx, cancel := context.WithCancel(context.Background())
-		server := NewServer(ctx, "127.0.0.1:6060", 100*time.Millisecond)
+		server := NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 100*time.Millisecond)
 		_, _, serverDone := server.Start()
 		cancel()
 		<-serverDone
@@ -235,10 +235,10 @@ func TestServer(t *testing.T) {
 	t.Run("Port_conflict", func(t *testing.T) {
 		logger.Configure(os.Stdout, "test", "ERROR")
 		ctx, cancel := context.WithCancel(context.Background())
-		server := NewServer(ctx, "127.0.0.1:6060", 100*time.Millisecond)
+		server := NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 100*time.Millisecond)
 		_, _, serverDone := server.Start()
 
-		server2 := NewServer(ctx, "127.0.0.1:6060", 100*time.Millisecond)
+		server2 := NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 100*time.Millisecond)
 		_, _, server2Done := server2.Start()
 		<-server2Done
 

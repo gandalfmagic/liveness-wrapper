@@ -49,6 +49,7 @@ func init() {
 	RootCmd.PersistentFlags().Bool("process-fail-on-stderr", false, "Mark the wrapped process as failed if it writes logs on stderr")
 	RootCmd.PersistentFlags().StringP("server-address", "a", ":6060", "Bind address for the http server")
 	RootCmd.PersistentFlags().DurationP("server-ping-timeout", "t", 10*time.Minute, "Ping endpoint timeout, use 0 to disable")
+	RootCmd.PersistentFlags().DurationP("server-shutdown-timeout", "s", 15*time.Second, "HTTP server shutdown timeout")
 	RootCmd.PersistentFlags().String("log-level", "WARN", "Output level of logs (TRACE, DEBUG, INFO, WARN, ERROR, FATAL)")
 
 	// cli-only flags
@@ -66,6 +67,7 @@ func init() {
 
 	_ = viper.BindPFlag("server.address", RootCmd.PersistentFlags().Lookup("server-address"))
 	_ = viper.BindPFlag("server.ping-timeout", RootCmd.PersistentFlags().Lookup("server-ping-timeout"))
+	_ = viper.BindPFlag("server.shutdown-timeout", RootCmd.PersistentFlags().Lookup("server-shutdown-timeout"))
 	_ = viper.BindPFlag("log.level", RootCmd.PersistentFlags().Lookup("log-level"))
 }
 
@@ -187,7 +189,7 @@ func run(_ *cobra.Command, _ []string) error {
 	ctx, cancelServer := context.WithCancel(context.Background())
 
 	// create the http server
-	server := http.NewServer(ctx, viper.GetString("server.address"), viper.GetDuration("server.ping-timeout"))
+	server := http.NewServer(ctx, viper.GetString("server.address"), viper.GetDuration("server.shutdown-timeout"), viper.GetDuration("server.ping-timeout"))
 	updateReady, updateAlive, serverDone := server.Start()
 
 	ctx, cancelWrapper := context.WithCancel(context.Background())
