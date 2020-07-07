@@ -1,9 +1,6 @@
 #!/bin/sh
 
-function w() {
-sleep 0.1
-}
-trap "w" EXIT
+trap 'sleep 0.1' EXIT
 
 sleep 0.2
 exit 0
