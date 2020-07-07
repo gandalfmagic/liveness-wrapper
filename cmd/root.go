@@ -150,12 +150,7 @@ type runner struct {
 	wrapperData <-chan system.WrapperData
 }
 
-func (r *runner) wait(cancelFuncProcess, cancelFuncHttp context.CancelFunc) error {
-	// create the channel to catch SIGINT signal
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	defer close(c)
-
+func (r *runner) wait(cancelFuncProcess, cancelFuncHttp context.CancelFunc, c <-chan os.Signal) error {
 	defer close(r.updateAlive)
 	defer close(r.updateReady)
 	for {
@@ -208,5 +203,10 @@ func run(_ *cobra.Command, _ []string) error {
 		wrapperData: wrapperData,
 	}
 
-	return r.wait(cancelFuncProcess, cancelFuncHttp)
+	// create the channel to catch SIGINT signal
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	defer close(c)
+
+	return r.wait(cancelFuncProcess, cancelFuncHttp, c)
 }
