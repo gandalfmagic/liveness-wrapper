@@ -2,6 +2,7 @@
 
 ![Go](https://github.com/gandalfmagic/liveness-wrapper/workflows/Go/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/gandalfmagic/liveness-wrapper/badge.svg?branch=master)](https://coveralls.io/github/gandalfmagic/liveness-wrapper?branch=master&service=github)
+[![Maintainability](https://api.codeclimate.com/v1/badges/5311048dc1b4eeca9ea8/maintainability)](https://codeclimate.com/github/gandalfmagic/liveness-wrapper/maintainability)
 
 A better way to integrate some applications inside of a Kubernetes deployment.
 
