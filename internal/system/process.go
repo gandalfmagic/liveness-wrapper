@@ -32,12 +32,11 @@ type WrapperData struct {
 }
 
 type WrapperHandler interface {
-	Start() (<-chan WrapperData, <-chan struct{})
+	Start(ctx context.Context) (<-chan WrapperData, <-chan struct{})
 }
 
 type wrapperHandler struct {
 	arg             []string
-	ctx             context.Context
 	failOnStdErr    bool
 	hideStdErr      bool
 	hideStdOut      bool
@@ -57,11 +56,10 @@ type wrapperHandler struct {
 //   arg: a list of arguments for the process
 // Return values:
 //   system.WrapperHandler
-func NewWrapperHandler(ctx context.Context, restart WrapperRestartMode, hideStdOut, hideStdErr, failOnStdErr bool,
+func NewWrapperHandler(restart WrapperRestartMode, hideStdOut, hideStdErr, failOnStdErr bool,
 	path string, arg ...string) WrapperHandler {
 	p := &wrapperHandler{
 		arg:             arg,
-		ctx:             ctx,
 		failOnStdErr:    failOnStdErr,
 		hideStdErr:      hideStdErr,
 		hideStdOut:      hideStdOut,
@@ -83,19 +81,19 @@ func NewWrapperHandler(ctx context.Context, restart WrapperRestartMode, hideStdO
 //     on this channel the wrapped process finally ended, the
 //     main process of the object will returns and all the
 //     channels will be closed
-func (p *wrapperHandler) Start() (<-chan WrapperData, <-chan struct{}) {
+func (p *wrapperHandler) Start(ctx context.Context) (<-chan WrapperData, <-chan struct{}) {
 	chanWrapperData := make(chan WrapperData)
 	chanWrapperDone := make(chan struct{})
 
-	go p.do(chanWrapperData, chanWrapperDone)
+	go p.do(ctx, chanWrapperData, chanWrapperDone)
 
 	return chanWrapperData, chanWrapperDone
 }
 
 // run executes a new instance of the wrapped process and
 // starts the goroutine responsible to wait for it to end.
-func (p *wrapperHandler) run(runError chan<- error, signalOnErrors bool, loggedErrors chan<- int) error {
-	cmd := exec.CommandContext(p.ctx, p.path, p.arg...)
+func (p *wrapperHandler) run(ctx context.Context, runError chan<- error, signalOnErrors bool, loggedErrors chan<- int) error {
+	cmd := exec.CommandContext(ctx, p.path, p.arg...)
 
 	if !p.hideStdOut {
 		cmd.Stdout = logger.NewLogInfoWriter("wrapped log")
@@ -148,10 +146,10 @@ func (p *wrapperHandler) doRunError(err error) (status WrapperStatus, processExi
 	return
 }
 
-func (p *wrapperHandler) doRestart(runError chan error, loggedErrors chan int) (status WrapperStatus) {
+func (p *wrapperHandler) doRestart(ctx context.Context, runError chan error, loggedErrors chan int) (status WrapperStatus) {
 	// when a signal i received from the restartTimer, the wrapped
 	// process is started
-	if err := p.run(runError, p.failOnStdErr, loggedErrors); err != nil {
+	if err := p.run(ctx, runError, p.failOnStdErr, loggedErrors); err != nil {
 		status = WrapperStatusError
 
 		return
@@ -181,7 +179,7 @@ func (p *wrapperHandler) canRestart(contextIsCanceling bool, exitStatus int) boo
 	return false
 }
 
-func (p *wrapperHandler) do(chanWrapperData chan<- WrapperData, chanWrapperDone chan<- struct{}) {
+func (p *wrapperHandler) do(ctx context.Context, chanWrapperData chan<- WrapperData, chanWrapperDone chan<- struct{}) {
 	defer close(chanWrapperDone)
 	defer close(chanWrapperData)
 
@@ -217,10 +215,10 @@ func (p *wrapperHandler) do(chanWrapperData chan<- WrapperData, chanWrapperDone 
 				return
 			}
 
-			status = p.doRestart(runError, loggedErrors)
+			status = p.doRestart(ctx, runError, loggedErrors)
 			chanWrapperData <- WrapperData{status, nil, false}
 
-		case <-p.ctx.Done():
+		case <-ctx.Done():
 			if contextDone {
 				logger.Debugf("the context is already closing")
 				continue

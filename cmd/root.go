@@ -190,16 +190,16 @@ func run(_ *cobra.Command, _ []string) error {
 	ctx, cancelServer := context.WithCancel(context.Background())
 
 	// create the http server
-	server := http.NewServer(ctx, viper.GetString("server.address"), viper.GetDuration("server.shutdown-timeout"), viper.GetDuration("server.ping-timeout"))
-	updateReady, updateAlive, serverDone := server.Start()
+	server := http.NewServer(viper.GetString("server.address"), viper.GetDuration("server.shutdown-timeout"), viper.GetDuration("server.ping-timeout"))
+	updateReady, updateAlive, serverDone := server.Start(ctx)
 
 	ctx, cancelWrapper := context.WithCancel(context.Background())
 
 	// start the wrapped process
-	wrapper := system.NewWrapperHandler(ctx, getRestartMode(), viper.GetBool("process.hide-stdout"),
+	wrapper := system.NewWrapperHandler(getRestartMode(), viper.GetBool("process.hide-stdout"),
 		viper.GetBool("process.hide-stderr"), viper.GetBool("process.fail-on-stderr"),
 		viper.GetString("process.path"), viper.GetStringSlice("process.args")...)
-	wrapperData, wrapperDone := wrapper.Start()
+	wrapperData, wrapperDone := wrapper.Start(ctx)
 
 	r := &runner{
 		serverDone:  serverDone,

@@ -14,7 +14,6 @@ var testDirectory = "../../test"
 func Test_wrapperHandler_canRestart(t *testing.T) {
 	type fields struct {
 		arg          []string
-		ctx          context.Context
 		failOnStdErr bool
 		hideStdErr   bool
 		hideStdOut   bool
@@ -108,7 +107,6 @@ func Test_wrapperHandler_canRestart(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &wrapperHandler{
 				arg:          tt.fields.arg,
-				ctx:          tt.fields.ctx,
 				failOnStdErr: tt.fields.failOnStdErr,
 				hideStdErr:   tt.fields.hideStdErr,
 				hideStdOut:   tt.fields.hideStdOut,
@@ -215,7 +213,6 @@ func Test_wrapperHandler_do(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &wrapperHandler{
 				arg:          tt.fields.arg,
-				ctx:          context.Background(),
 				failOnStdErr: tt.fields.failOnStdErr,
 				hideStdErr:   tt.fields.hideStdErr,
 				hideStdOut:   tt.fields.hideStdOut,
@@ -244,8 +241,10 @@ func Test_wrapperHandler_do(t *testing.T) {
 				t.Errorf("expected wrapperStatus == %v, got %v", tt.want.statusBeforeStart, wrapperStatus)
 			}
 
+			ctx := context.Background()
+
 			t.Log("start the process")
-			go p.do(chanWrapperData, chanWrapperDone)
+			go p.do(ctx, chanWrapperData, chanWrapperDone)
 
 			t.Log("wait to ensure the process is running")
 			time.Sleep(10 * time.Millisecond)
@@ -411,7 +410,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 
 			p := &wrapperHandler{
 				arg:             tt.fields.arg,
-				ctx:             ctx,
 				failOnStdErr:    tt.fields.failOnStdErr,
 				hideStdErr:      tt.fields.hideStdErr,
 				hideStdOut:      tt.fields.hideStdOut,
@@ -442,7 +440,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			}
 
 			t.Log("start the process")
-			go p.do(chanWrapperData, chanWrapperDone)
+			go p.do(ctx, chanWrapperData, chanWrapperDone)
 
 			t.Log("wait to ensure the process is running")
 			time.Sleep(10 * time.Millisecond)
@@ -631,7 +629,6 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 
 			p := &wrapperHandler{
 				arg:             tt.fields.arg,
-				ctx:             ctx,
 				failOnStdErr:    tt.fields.failOnStdErr,
 				hideStdErr:      tt.fields.hideStdErr,
 				hideStdOut:      tt.fields.hideStdOut,
@@ -662,7 +659,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			}
 
 			t.Log("start the process")
-			go p.do(chanWrapperData, chanWrapperDone)
+			go p.do(ctx, chanWrapperData, chanWrapperDone)
 
 			t.Log("wait to ensure the process is running")
 			time.Sleep(10 * time.Millisecond)

@@ -21,14 +21,14 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelFuncHttp := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 10*time.Minute)
-		updateReady, updateAlive, serverDone := server.Start()
+		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 10*time.Minute)
+		updateReady, updateAlive, serverDone := server.Start(ctx)
 
 		ctx, cancelFuncProcess := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(ctx, system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "cmd/test.sh"))
-		wrapperData, wrapperDone := process.Start()
+		process := system.NewWrapperHandler(system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "cmd/test.sh"))
+		wrapperData, wrapperDone := process.Start(ctx)
 
 		r := &runner{
 			serverDone:  serverDone,
@@ -74,14 +74,14 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelFuncHttp := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 10*time.Minute)
-		updateReady, updateAlive, serverDone := server.Start()
+		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 10*time.Minute)
+		updateReady, updateAlive, serverDone := server.Start(ctx)
 
 		ctx, cancelFuncProcess := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(ctx, system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "cmd/error_10.sh"))
-		wrapperData, wrapperDone := process.Start()
+		process := system.NewWrapperHandler(system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "cmd/error_10.sh"))
+		wrapperData, wrapperDone := process.Start(ctx)
 
 		r := &runner{
 			serverDone:  serverDone,
@@ -128,14 +128,14 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelServer := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 10*time.Minute)
-		updateReady, updateAlive, serverDone := server.Start()
+		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 10*time.Minute)
+		updateReady, updateAlive, serverDone := server.Start(ctx)
 
 		ctx, cancelWrapper := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(ctx, system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "cmd/test.sh"))
-		wrapperData, wrapperDone := process.Start()
+		process := system.NewWrapperHandler(system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "cmd/test.sh"))
+		wrapperData, wrapperDone := process.Start(ctx)
 
 		r := &runner{
 			serverDone:  serverDone,
@@ -185,14 +185,14 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelServer := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 10*time.Minute)
-		updateReady, updateAlive, serverDone := server.Start()
+		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 10*time.Minute)
+		updateReady, updateAlive, serverDone := server.Start(ctx)
 
 		ctx, cancelWrapper := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(ctx, system.WrapperRestartOnError, false, false, false, filepath.Join(testDirectory, "cmd/error_10.sh"))
-		wrapperData, wrapperDone := process.Start()
+		process := system.NewWrapperHandler(system.WrapperRestartOnError, false, false, false, filepath.Join(testDirectory, "cmd/error_10.sh"))
+		wrapperData, wrapperDone := process.Start(ctx)
 
 		r := &runner{
 			serverDone:  serverDone,
@@ -256,14 +256,14 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelFuncHttp := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 10*time.Minute)
-		updateReady, updateAlive, serverDone := server.Start()
+		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 10*time.Minute)
+		updateReady, updateAlive, serverDone := server.Start(ctx)
 
 		ctx, cancelFuncProcess := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(ctx, system.WrapperRestartOnError, false, false, false, filepath.Join(testDirectory, "cmd/error_10.sh"))
-		wrapperData, wrapperDone := process.Start()
+		process := system.NewWrapperHandler(system.WrapperRestartOnError, false, false, false, filepath.Join(testDirectory, "cmd/error_10.sh"))
+		wrapperData, wrapperDone := process.Start(ctx)
 
 		r := &runner{
 			serverDone:  serverDone,
@@ -341,14 +341,14 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelFuncHttp := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 20*time.Millisecond)
-		updateReady, updateAlive, serverDone := server.Start()
+		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 20*time.Millisecond)
+		updateReady, updateAlive, serverDone := server.Start(ctx)
 
 		ctx, cancelFuncProcess := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(ctx, system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "cmd/test.sh"))
-		wrapperData, wrapperDone := process.Start()
+		process := system.NewWrapperHandler(system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "cmd/test.sh"))
+		wrapperData, wrapperDone := process.Start(ctx)
 
 		r := &runner{
 			serverDone:  serverDone,
