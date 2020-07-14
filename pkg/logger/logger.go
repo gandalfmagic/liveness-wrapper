@@ -4,81 +4,107 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/jcelliott/lumber"
 )
 
-type consoleLogger *lumber.ConsoleLogger
-
-var logger consoleLogger
+var mux sync.Mutex
+var defaultLogger *lumber.ConsoleLogger
 
 func CheckFatal(message string, err error) {
+	mux.Lock()
+	defer mux.Unlock()
+
 	if err != nil {
 		Fatalf(message+": ", err)
 	}
 }
 
 func Fatalf(format string, v ...interface{}) {
+	mux.Lock()
 	getLogger().Fatal(format, v...)
+	mux.Unlock()
 	os.Exit(1)
 }
 
 func Errorf(format string, v ...interface{}) {
+	mux.Lock()
+	defer mux.Unlock()
 	getLogger().Error(format, v...)
 }
 
 func Warnf(format string, v ...interface{}) {
+	mux.Lock()
+	defer mux.Unlock()
 	getLogger().Warn(format, v...)
 }
 
 func Infof(format string, v ...interface{}) {
+	mux.Lock()
+	defer mux.Unlock()
 	getLogger().Info(format, v...)
 }
 
 func Debugf(format string, v ...interface{}) {
+	mux.Lock()
+	defer mux.Unlock()
 	getLogger().Debug(format, v...)
 }
 
 func HTTPError(r *http.Request, status int) {
+	mux.Lock()
+	defer mux.Unlock()
 	getLogger().Error("%s %s \"%s\" %d \"%s\" \"%s\"", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent())
 }
 
 func HTTPWarn(r *http.Request, status int) {
+	mux.Lock()
+	defer mux.Unlock()
 	getLogger().Warn("%s %s \"%s\" %d \"%s\" \"%s\"", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent())
 }
 
 func HTTPInfo(r *http.Request, status int) {
+	mux.Lock()
+	defer mux.Unlock()
 	getLogger().Info("%s %s \"%s\" %d \"%s\" \"%s\"", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent())
 }
 
 func HTTPDebug(r *http.Request, status int) {
+	mux.Lock()
+	defer mux.Unlock()
 	getLogger().Debug("%s %s \"%s\" %d \"%s\" \"%s\"", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent())
 }
 
 func HTTPDebugWithDuration(r *http.Request, status int, duration time.Duration) {
+	mux.Lock()
+	defer mux.Unlock()
 	getLogger().Debug("%s %s \"%s\" %d \"%s\" \"%s\" %s", r.RemoteAddr, r.Method, r.RequestURI, status, r.Referer(), r.UserAgent(), duration)
 }
 
 func Configure(out io.WriteCloser, prefix, level string) {
+	mux.Lock()
+	defer mux.Unlock()
+
 	// convert the log level
 	logLvl := lumber.LvlInt(level)
 
-	if logger == nil {
-		logger = lumber.NewBasicLogger(out, logLvl)
+	if defaultLogger == nil {
+		defaultLogger = lumber.NewBasicLogger(out, logLvl)
 	}
 
-	(*lumber.ConsoleLogger)(logger).Level(logLvl)
-	(*lumber.ConsoleLogger)(logger).Prefix("[" + prefix + "]")
+	(*lumber.ConsoleLogger)(defaultLogger).Level(logLvl)
+	(*lumber.ConsoleLogger)(defaultLogger).Prefix("[" + prefix + "]")
 }
 
 func getLogger() *lumber.ConsoleLogger {
-	if logger == nil {
-		logger = lumber.NewConsoleLogger(lumber.INFO)
-		return logger
+	if defaultLogger == nil {
+		defaultLogger = lumber.NewConsoleLogger(lumber.INFO)
+		return defaultLogger
 	}
 
-	return logger
+	return defaultLogger
 }
 
 type logInfoWriter struct {
@@ -91,7 +117,10 @@ func NewLogInfoWriter(prefix string) io.Writer {
 }
 
 func (lw logInfoWriter) Write(p []byte) (n int, err error) {
+	mux.Lock()
+	defer mux.Unlock()
 	getLogger().Info(lw.prefix + ": " + string(p))
+
 	return len(p), nil
 }
 
@@ -105,7 +134,10 @@ func NewLogErrorWriter(prefix string) io.Writer {
 }
 
 func (lw logErrorWriter) Write(p []byte) (n int, err error) {
+	mux.Lock()
+	defer mux.Unlock()
 	getLogger().Error(lw.prefix + ": " + string(p))
+
 	return len(p), nil
 }
 
