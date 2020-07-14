@@ -18,17 +18,17 @@ var testDirectory = "../test"
 
 func Test_runner_wait(t *testing.T) {
 	t.Run("Exit_without_error", func(t *testing.T) {
-		ctx, cancelFuncHttp := context.WithCancel(context.Background())
+		ctx, cancelServer := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 10*time.Minute)
-		updateReady, updateAlive, serverDone := server.Start()
+		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 10*time.Minute)
+		updateReady, updateAlive, serverDone := server.Start(ctx)
 
-		ctx, cancelFuncProcess := context.WithCancel(context.Background())
+		ctx, cancelWrapper := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(ctx, system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "cmd/test.sh"))
-		wrapperData, wrapperDone := process.Start()
+		process := system.NewWrapperHandler(system.WrapperRestartNever, false, false, false, 1*time.Second, filepath.Join(testDirectory, "cmd/test_int_no_err.sh"))
+		wrapperData, wrapperDone := process.Start(ctx)
 
 		r := &runner{
 			serverDone:  serverDone,
@@ -42,18 +42,17 @@ func Test_runner_wait(t *testing.T) {
 		signal.Notify(c, os.Interrupt)
 		defer close(c)
 
-		t.Log("execute the process")
+		// execute the process
 		chanErr := make(chan error)
 		go func() {
-			chanErr <- r.wait(cancelFuncProcess, cancelFuncHttp, c)
+			chanErr <- r.wait(cancelWrapper, cancelServer, c)
 		}()
 
-		t.Log("wait for the process to start")
-		time.Sleep(10 * time.Millisecond)
+		// wait for the process to start
+		time.Sleep(20 * time.Millisecond)
 
-		t.Log("testing the endpoints again")
+		// testing the endpoints
 		var rsp *http.Response
-
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /ready, got %v", rsp.StatusCode)
@@ -74,14 +73,14 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelFuncHttp := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 10*time.Minute)
-		updateReady, updateAlive, serverDone := server.Start()
+		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 10*time.Minute)
+		updateReady, updateAlive, serverDone := server.Start(ctx)
 
 		ctx, cancelFuncProcess := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(ctx, system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "cmd/error_10.sh"))
-		wrapperData, wrapperDone := process.Start()
+		process := system.NewWrapperHandler(system.WrapperRestartNever, false, false, false, 1*time.Second, filepath.Join(testDirectory, "cmd/error_10_int_no_err.sh"))
+		wrapperData, wrapperDone := process.Start(ctx)
 
 		r := &runner{
 			serverDone:  serverDone,
@@ -95,16 +94,16 @@ func Test_runner_wait(t *testing.T) {
 		signal.Notify(c, os.Interrupt)
 		defer close(c)
 
-		t.Log("execute the process")
+		// execute the process
 		chanErr := make(chan error)
 		go func() {
 			chanErr <- r.wait(cancelFuncProcess, cancelFuncHttp, c)
 		}()
 
-		t.Log("wait for the process to start")
-		time.Sleep(10 * time.Millisecond)
+		// wait for the process to start
+		time.Sleep(20 * time.Millisecond)
 
-		t.Log("testing the endpoints")
+		// testing the endpoints
 		var rsp *http.Response
 
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
@@ -121,21 +120,20 @@ func Test_runner_wait(t *testing.T) {
 		if err == nil {
 			t.Error("an error was expected, got no one")
 		}
-		log.Printf("%s", err)
 	})
 
 	t.Run("SIGINT", func(t *testing.T) {
 		ctx, cancelServer := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 10*time.Minute)
-		updateReady, updateAlive, serverDone := server.Start()
+		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 10*time.Minute)
+		updateReady, updateAlive, serverDone := server.Start(ctx)
 
 		ctx, cancelWrapper := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(ctx, system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "cmd/test.sh"))
-		wrapperData, wrapperDone := process.Start()
+		process := system.NewWrapperHandler(system.WrapperRestartNever, false, false, false, 1*time.Second, filepath.Join(testDirectory, "cmd/test_int_no_err.sh"))
+		wrapperData, wrapperDone := process.Start(ctx)
 
 		r := &runner{
 			serverDone:  serverDone,
@@ -149,16 +147,16 @@ func Test_runner_wait(t *testing.T) {
 		signal.Notify(c, os.Interrupt)
 		defer close(c)
 
-		t.Log("execute the process")
+		// execute the process
 		chanErr := make(chan error)
 		go func() {
 			chanErr <- r.wait(cancelWrapper, cancelServer, c)
 		}()
 
-		t.Log("wait for the process to start")
-		time.Sleep(10 * time.Millisecond)
+		// wait for the process to start
+		time.Sleep(20 * time.Millisecond)
 
-		t.Log("testing the endpoints")
+		// testing the endpoints
 		var rsp *http.Response
 
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
@@ -171,28 +169,41 @@ func Test_runner_wait(t *testing.T) {
 			t.Errorf("Expected status code 200 on /alive, got %v", rsp.StatusCode)
 		}
 
-		t.Log("send CTRL-C")
+		// send CTRL-C
 		c <- os.Interrupt
 
-		err := <-chanErr
-		if err == nil {
-			t.Error("an error was expected, got no one")
+		time.Sleep(10 * time.Millisecond)
+
+		// test alive endpoint
+		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
+		if rsp.StatusCode != 200 {
+			t.Errorf("Expected status code 200 on /alive, got %v", rsp.StatusCode)
 		}
-		log.Printf("%s", err)
+
+		// test ready endpoint
+		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
+		if rsp.StatusCode != 503 {
+			t.Errorf("Expected status code 503 on /alive, got %v", rsp.StatusCode)
+		}
+
+		err := <-chanErr
+		if err != nil {
+			t.Errorf("no error was expected, got %s", err)
+		}
 	})
 
 	t.Run("Restart_on_error_Exit_with_error_Kill_while_NOT_running", func(t *testing.T) {
 		ctx, cancelServer := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 10*time.Minute)
-		updateReady, updateAlive, serverDone := server.Start()
+		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 10*time.Minute)
+		updateReady, updateAlive, serverDone := server.Start(ctx)
 
 		ctx, cancelWrapper := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(ctx, system.WrapperRestartOnError, false, false, false, filepath.Join(testDirectory, "cmd/error_10.sh"))
-		wrapperData, wrapperDone := process.Start()
+		process := system.NewWrapperHandler(system.WrapperRestartOnError, false, false, false, 1*time.Second, filepath.Join(testDirectory, "cmd/error_10_int_no_err.sh"))
+		wrapperData, wrapperDone := process.Start(ctx)
 
 		r := &runner{
 			serverDone:  serverDone,
@@ -206,43 +217,45 @@ func Test_runner_wait(t *testing.T) {
 		signal.Notify(c, os.Interrupt)
 		defer close(c)
 
-		t.Log("execute the process")
+		// execute the process
 		chanErr := make(chan error)
 		go func() {
 			chanErr <- r.wait(cancelWrapper, cancelServer, c)
 		}()
 
-		t.Log("wait for the process to start")
+		// wait for the process to start
 		time.Sleep(10 * time.Millisecond)
 
-		t.Log("testing the endpoints")
 		var rsp *http.Response
 
+		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /ready, got %v", rsp.StatusCode)
 		}
 
+		// testing alive endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /alive, got %v", rsp.StatusCode)
 		}
 
-		t.Log("wait for the process to terminate with error")
-		time.Sleep(310 * time.Millisecond) // 200ms for standard execution + 100ms for trap
+		// wait for the process to terminate with error
+		time.Sleep(140 * time.Millisecond)
 
-		t.Log("testing the endpoints")
+		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /ready, got %v", rsp.StatusCode)
 		}
 
+		// testing alive endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
 		if rsp.StatusCode != 503 {
 			t.Errorf("Expected status code 503 on /alive, got %v", rsp.StatusCode)
 		}
 
-		t.Log("send CTRL-C while the process is not running")
+		// send CTRL-C while the process is not running
 		c <- os.Interrupt
 
 		err := <-chanErr
@@ -256,14 +269,14 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelFuncHttp := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 10*time.Minute)
-		updateReady, updateAlive, serverDone := server.Start()
+		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 10*time.Minute)
+		updateReady, updateAlive, serverDone := server.Start(ctx)
 
 		ctx, cancelFuncProcess := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(ctx, system.WrapperRestartOnError, false, false, false, filepath.Join(testDirectory, "cmd/error_10.sh"))
-		wrapperData, wrapperDone := process.Start()
+		process := system.NewWrapperHandler(system.WrapperRestartOnError, false, false, false, 1*time.Second, filepath.Join(testDirectory, "cmd/error_10_int_no_err.sh"))
+		wrapperData, wrapperDone := process.Start(ctx)
 
 		r := &runner{
 			serverDone:  serverDone,
@@ -277,78 +290,95 @@ func Test_runner_wait(t *testing.T) {
 		signal.Notify(c, os.Interrupt)
 		defer close(c)
 
-		t.Log("execute the process")
+		// execute the process
 		chanErr := make(chan error)
 		go func() {
 			chanErr <- r.wait(cancelFuncProcess, cancelFuncHttp, c)
 		}()
 
-		t.Log("wait for the process to start")
+		// wait for the process to start
 		time.Sleep(10 * time.Millisecond)
 
-		t.Log("testing the endpoints")
 		var rsp *http.Response
 
+		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /ready, got %v", rsp.StatusCode)
 		}
 
+		// testing alive endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /alive, got %v", rsp.StatusCode)
 		}
 
-		t.Log("wait for the process to terminate with error")
-		time.Sleep(310 * time.Millisecond) // 200ms for standard execution + 100ms for trap
+		// wait for the process to terminate with error
+		time.Sleep(140 * time.Millisecond)
 
-		t.Log("testing the endpoints")
+		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /ready, got %v", rsp.StatusCode)
 		}
 
+		// testing alive endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
 		if rsp.StatusCode != 503 {
 			t.Errorf("Expected status code 503 on /alive, got %v", rsp.StatusCode)
 		}
 
-		t.Log("wait for the process to restart")
-		time.Sleep(1010 * time.Millisecond)
+		// wait for the process to restart
+		time.Sleep(1000 * time.Millisecond)
 
-		t.Log("testing the endpoints")
+		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /ready, got %v", rsp.StatusCode)
 		}
 
+		// testing alive endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /alive, got %v", rsp.StatusCode)
 		}
 
-		t.Log("send CTRL-C while the process is running")
+		// send CTRL-C while the process is running
 		c <- os.Interrupt
 
-		err := <-chanErr
-		if err == nil {
-			t.Error("an error was expected, got no one")
+		// wait for the process to restart
+		time.Sleep(10 * time.Millisecond)
+
+		// testing ready endpoint
+		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
+		if rsp.StatusCode != 503 {
+			t.Errorf("Expected status code 503 on /ready, got %v", rsp.StatusCode)
 		}
-		log.Printf("%s", err)
+
+		// testing alive endpoint
+		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
+		if rsp.StatusCode != 200 {
+			t.Errorf("Expected status code 200 on /alive, got %v", rsp.StatusCode)
+		}
+
+		err := <-chanErr
+		if err != nil {
+			t.Errorf("no error was expected, got %s", err)
+		}
 	})
 
 	t.Run("Test_ping", func(t *testing.T) {
 		ctx, cancelFuncHttp := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 20*time.Millisecond)
-		updateReady, updateAlive, serverDone := server.Start()
+		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 15*time.Millisecond)
+		updateReady, updateAlive, serverDone := server.Start(ctx)
 
 		ctx, cancelFuncProcess := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(ctx, system.WrapperRestartNever, false, false, false, filepath.Join(testDirectory, "cmd/test.sh"))
-		wrapperData, wrapperDone := process.Start()
+		process := system.NewWrapperHandler(system.WrapperRestartNever, false, false, false, 1*time.Second, filepath.Join(testDirectory, "cmd/test_int_no_err.sh"))
+		wrapperData, wrapperDone := process.Start(ctx)
 
 		r := &runner{
 			serverDone:  serverDone,
@@ -362,94 +392,105 @@ func Test_runner_wait(t *testing.T) {
 		signal.Notify(c, os.Interrupt)
 		defer close(c)
 
-		t.Log("execute the process")
+		// execute the process
 		chanErr := make(chan error)
 		go func() {
 			chanErr <- r.wait(cancelFuncProcess, cancelFuncHttp, c)
 		}()
 
-		t.Log("wait for the process to start")
+		// wait for the process to start
 		time.Sleep(10 * time.Millisecond)
 
-		t.Log("testing the endpoints")
 		var rsp *http.Response
 
+		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /ready, got %v", rsp.StatusCode)
 		}
 
+		// testing alive endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /alive, got %v", rsp.StatusCode)
 		}
 
-		t.Log("send request to the /ping endpoint")
+		// send request to the /ping endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ping")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /ping, got %v", rsp.StatusCode)
 		}
 
+		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /ready, got %v", rsp.StatusCode)
 		}
 
+		// testing alive endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /alive, got %v", rsp.StatusCode)
 		}
 
-		t.Log("wait for the /ping timeout to expire")
-		time.Sleep(20 * time.Millisecond)
+		// wait 15ms for the /ping timeout to expire
+		time.Sleep(15 * time.Millisecond)
 
+		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /ready, got %v", rsp.StatusCode)
 		}
 
+		// testing alive endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
 		if rsp.StatusCode != 503 {
 			t.Errorf("Expected status code 503 on /alive, got %v", rsp.StatusCode)
 		}
 
-		t.Log("send request to the /ping endpoint")
+		// send request to the /ping endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ping")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /ping, got %v", rsp.StatusCode)
 		}
 
+		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /ready, got %v", rsp.StatusCode)
 		}
 
+		// testing alive endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /alive, got %v", rsp.StatusCode)
 		}
 
-		t.Log("wait 15ms for the /ping timeout to expire")
-		time.Sleep(15 * time.Millisecond)
+		// wait 10ms, 5ms before the ping endpoint expires
+		time.Sleep(10 * time.Millisecond)
 
+		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /ready, got %v", rsp.StatusCode)
 		}
 
+		// testing alive endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /alive, got %v", rsp.StatusCode)
 		}
 
-		t.Log("wait 5ms for the /ping timeout to expire")
+		// wait 5ms for the /ping timeout to expire
 		time.Sleep(5 * time.Millisecond)
 
+		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /ready, got %v", rsp.StatusCode)
 		}
 
+		// testing alive endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
 		if rsp.StatusCode != 503 {
 			t.Errorf("Expected status code 503 on /alive, got %v", rsp.StatusCode)

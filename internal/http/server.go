@@ -10,11 +10,10 @@ import (
 )
 
 type Server interface {
-	Start() (chan<- bool, chan<- bool, <-chan struct{})
+	Start(ctx context.Context) (chan<- bool, chan<- bool, <-chan struct{})
 }
 
 type server struct {
-	ctx             context.Context
 	externalAlive   chan bool
 	isAlive         bool
 	isReady         bool
@@ -40,9 +39,8 @@ var httpServerShutdown = func(ctx context.Context, server *http.Server, shutdown
 	logger.Infof("http server shutdown complete...")
 }
 
-func NewServer(ctx context.Context, addr string, shutdownTimeout, pingInterval time.Duration) Server {
+func NewServer(addr string, shutdownTimeout, pingInterval time.Duration) Server {
 	s := &server{
-		ctx:             ctx,
 		externalAlive:   make(chan bool),
 		pingChannel:     make(chan bool),
 		pingInterval:    pingInterval,
@@ -67,7 +65,7 @@ func NewServer(ctx context.Context, addr string, shutdownTimeout, pingInterval t
 	return s
 }
 
-func (s *server) do() {
+func (s *server) do(ctx context.Context) {
 	defer close(s.pingChannel)
 
 	timer := time.NewTimer(s.pingInterval)
@@ -77,13 +75,13 @@ func (s *server) do() {
 
 	for {
 		select {
-		case <-s.ctx.Done():
+		case <-ctx.Done():
 			logger.Debugf("http server context is closing")
 
 			s.isReady = false
 
-			timer.Stop()
-			httpServerShutdown(s.ctx, s.server, s.shutdownTimeout)
+			_ = timer.Stop()
+			httpServerShutdown(ctx, s.server, s.shutdownTimeout)
 
 			return
 
@@ -128,10 +126,10 @@ func (s *server) do() {
 	}
 }
 
-func (s *server) Start() (chan<- bool, chan<- bool, <-chan struct{}) {
+func (s *server) Start(ctx context.Context) (chan<- bool, chan<- bool, <-chan struct{}) {
 	isReady := make(chan struct{})
 
-	go s.do()
+	go s.do(ctx)
 
 	serverDone := make(chan struct{})
 

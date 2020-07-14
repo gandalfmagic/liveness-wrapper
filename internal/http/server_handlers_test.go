@@ -1,7 +1,6 @@
 package http
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,7 +9,6 @@ import (
 
 func Test_server_ReadyHandler(t *testing.T) {
 	type fields struct {
-		ctx           context.Context
 		externalAlive chan bool
 		isAlive       bool
 		isReady       bool
@@ -45,7 +43,6 @@ func Test_server_ReadyHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &server{
-				ctx:           tt.fields.ctx,
 				externalAlive: tt.fields.externalAlive,
 				isAlive:       tt.fields.isAlive,
 				isReady:       tt.fields.isReady,
@@ -73,7 +70,6 @@ func Test_server_ReadyHandler(t *testing.T) {
 
 func Test_server_AliveHandler(t *testing.T) {
 	type fields struct {
-		ctx           context.Context
 		externalAlive chan bool
 		isAlive       bool
 		isReady       bool
@@ -108,7 +104,6 @@ func Test_server_AliveHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &server{
-				ctx:           tt.fields.ctx,
 				externalAlive: tt.fields.externalAlive,
 				isAlive:       tt.fields.isAlive,
 				isReady:       tt.fields.isReady,
@@ -136,7 +131,6 @@ func Test_server_AliveHandler(t *testing.T) {
 
 func Test_server_PingHandler(t *testing.T) {
 	type fields struct {
-		ctx           context.Context
 		externalAlive chan bool
 		isAlive       bool
 		isReady       bool
@@ -169,7 +163,6 @@ func Test_server_PingHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &server{
-				ctx:           tt.fields.ctx,
 				externalAlive: tt.fields.externalAlive,
 				isAlive:       tt.fields.isAlive,
 				isReady:       tt.fields.isReady,
