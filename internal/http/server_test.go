@@ -23,92 +23,91 @@ func Test_server_do(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 
 		s := &server{
-			ctx:           ctx,
 			externalAlive: make(chan bool),
 			pingChannel:   make(chan bool),
 			pingInterval:  100 * time.Millisecond,
 			updateReady:   make(chan bool),
 			server:        nil,
 		}
-		go s.do()
+		go s.do(ctx)
 
-		if s.isReady != false {
+		if s.IsReady() != false {
 			t.Errorf("isReady must be false: got %v", s.isReady)
 		}
 
-		if s.isAlive != false {
+		if s.IsAlive() != false {
 			t.Errorf("isAlive must be false: got %v", s.isAlive)
 		}
 
-		t.Log("changing ready state to true")
+		// changing ready state to true
 		s.updateReady <- true
-		t.Log("waiting for the status of isReady to be updated")
+		// waiting for the status of isReady to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isReady != true {
+		if s.IsReady() != true {
 			t.Errorf("isReady must be true: got %v", s.isReady)
 		}
 
-		t.Log("signaling that the external process is alive")
+		// signaling that the external process is alive
 		s.externalAlive <- true
-		t.Log("waiting for the status of isAlive to be updated")
+		// waiting for the status of isAlive to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isAlive != true {
+		if s.IsAlive() != true {
 			t.Errorf("isAlive must be true: got %v", s.isAlive)
 		}
 
-		t.Log("sending a true value to the ping channel")
+		// sending a true value to the ping channel
 		s.pingChannel <- true
-		t.Log("waiting for the status of isAlive to be updated")
+		// waiting for the status of isAlive to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isAlive != true {
+		if s.IsAlive() != true {
 			t.Errorf("isAlive must be true: got %v", s.isAlive)
 		}
 
-		t.Log("let the timer expire")
+		// let the timer expire
 		time.Sleep(110 * time.Millisecond)
 
-		if s.isAlive != false {
+		if s.IsAlive() != false {
 			t.Errorf("isAlive must be false: got %v", s.isAlive)
 		}
 
-		t.Log("sending a true value to the ping channel")
+		// sending a true value to the ping channel
 		s.pingChannel <- true
-		t.Log("waiting for the status of isAlive to be updated")
+		// waiting for the status of isAlive to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isAlive != true {
+		if s.IsAlive() != true {
 			t.Errorf("isAlive must be true: got %v", s.isAlive)
 		}
 
-		t.Log("signaling that the external process is down")
+		// signaling that the external process is down
 		s.externalAlive <- false
-		t.Log("waiting for the status of isAlive to be updated")
+		// waiting for the status of isAlive to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isAlive != false {
+		if s.IsAlive() != false {
 			t.Errorf("isAlive must be false: got %v", s.isAlive)
 		}
 
-		t.Log("let the timer expire again")
+		// let the timer expire again
 		time.Sleep(110 * time.Millisecond)
 
-		if s.isAlive != false {
+		if s.IsAlive() != false {
 			t.Errorf("isAlive must be false: got %v", s.isAlive)
 		}
 
-		t.Log("changing ready state to false")
+		// changing ready state to false
 		s.updateReady <- false
-		t.Log("waiting for the status of isReady to be updated")
+		// waiting for the status of isReady to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isReady != false {
+		if s.IsReady() != false {
 			t.Errorf("isReady must be false: got %v", s.isReady)
 		}
 
-		t.Log("cancel the context, ending tests")
+		// cancel the context, ending tests
 		cancel()
 		<-serverDone
 
@@ -129,92 +128,91 @@ func Test_server_do(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 
 		s := &server{
-			ctx:           ctx,
 			externalAlive: make(chan bool),
 			pingChannel:   make(chan bool),
 			pingInterval:  0,
 			updateReady:   make(chan bool),
 			server:        nil,
 		}
-		go s.do()
+		go s.do(ctx)
 
-		if s.isReady != false {
+		if s.IsReady() != false {
 			t.Errorf("isReady must be false: got %v", s.isReady)
 		}
 
-		if s.isAlive != false {
+		if s.IsAlive() != false {
 			t.Errorf("isAlive must be false: got %v", s.isAlive)
 		}
 
-		t.Log("changing ready state to true")
+		// changing ready state to true
 		s.updateReady <- true
-		t.Log("waiting for the status of isReady to be updated")
+		// waiting for the status of isReady to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isReady != true {
+		if s.IsReady() != true {
 			t.Errorf("isReady must be true: got %v", s.isReady)
 		}
 
-		t.Log("signaling that the external process is alive")
+		// signaling that the external process is alive
 		s.externalAlive <- true
-		t.Log("waiting for the status of isAlive to be updated")
+		// waiting for the status of isAlive to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isAlive != true {
+		if s.IsAlive() != true {
 			t.Errorf("isAlive must be true: got %v", s.isAlive)
 		}
 
-		t.Log("sending a true value to the ping channel")
+		// sending a true value to the ping channel
 		s.pingChannel <- true
-		t.Log("waiting for the status of isAlive to be updated")
+		// waiting for the status of isAlive to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isAlive != true {
+		if s.IsAlive() != true {
 			t.Errorf("isAlive must be true: got %v", s.isAlive)
 		}
 
-		t.Log("let the timer expire")
+		// let the timer expire
 		time.Sleep(110 * time.Millisecond)
 
-		if s.isAlive != true {
+		if s.IsAlive() != true {
 			t.Errorf("isAlive must be true: got %v", s.isAlive)
 		}
 
-		t.Log("sending a true value to the ping channel")
+		// sending a true value to the ping channel
 		s.pingChannel <- true
-		t.Log("waiting for the status of isAlive to be updated")
+		// waiting for the status of isAlive to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isAlive != true {
+		if s.IsAlive() != true {
 			t.Errorf("isAlive must be true: got %v", s.isAlive)
 		}
 
-		t.Log("let the timer expire again")
+		// let the timer expire again
 		time.Sleep(110 * time.Millisecond)
 
-		if s.isAlive != true {
+		if s.IsAlive() != true {
 			t.Errorf("isAlive must be true: got %v", s.isAlive)
 		}
 
-		t.Log("signaling that the external process is down")
+		// signaling that the external process is down
 		s.externalAlive <- false
-		t.Log("waiting for the status of isAlive to be updated")
+		// waiting for the status of isAlive to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isAlive != false {
+		if s.IsAlive() != false {
 			t.Errorf("isAlive must be false: got %v", s.isAlive)
 		}
 
-		t.Log("changing ready state to false")
+		// changing ready state to false
 		s.updateReady <- false
-		t.Log("waiting for the status of isReady to be updated")
+		// waiting for the status of isReady to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isReady != false {
+		if s.IsReady() != false {
 			t.Errorf("isReady must be false: got %v", s.isReady)
 		}
 
-		t.Log("cancel the context, ending tests")
+		// cancel the context, ending tests
 		cancel()
 		<-serverDone
 
@@ -227,19 +225,19 @@ func TestServer(t *testing.T) {
 	t.Run("Graceful_shutdown", func(t *testing.T) {
 		logger.Configure(os.Stdout, "test", "ERROR")
 		ctx, cancel := context.WithCancel(context.Background())
-		server := NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 100*time.Millisecond)
-		_, _, serverDone := server.Start()
+		server := NewServer("127.0.0.1:6060", 15*time.Second, 100*time.Millisecond)
+		_, _, serverDone := server.Start(ctx)
 		cancel()
 		<-serverDone
 	})
 	t.Run("Port_conflict", func(t *testing.T) {
 		logger.Configure(os.Stdout, "test", "ERROR")
 		ctx, cancel := context.WithCancel(context.Background())
-		server := NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 100*time.Millisecond)
-		_, _, serverDone := server.Start()
+		server := NewServer("127.0.0.1:6060", 15*time.Second, 100*time.Millisecond)
+		_, _, serverDone := server.Start(ctx)
 
-		server2 := NewServer(ctx, "127.0.0.1:6060", 15*time.Second, 100*time.Millisecond)
-		_, _, server2Done := server2.Start()
+		server2 := NewServer("127.0.0.1:6060", 15*time.Second, 100*time.Millisecond)
+		_, _, server2Done := server2.Start(ctx)
 		<-server2Done
 
 		cancel()
