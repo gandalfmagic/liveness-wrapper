@@ -47,6 +47,7 @@ func init() {
 	RootCmd.PersistentFlags().Bool("process-hide-stdout", false, "Hide the stdout of the wrapped process from the logs")
 	RootCmd.PersistentFlags().Bool("process-hide-stderr", false, "Hide the stderr of the wrapped process from the logs")
 	RootCmd.PersistentFlags().Bool("process-fail-on-stderr", false, "Mark the wrapped process as failed if it writes logs on stderr")
+	RootCmd.PersistentFlags().Duration("process-timeout", 30*time.Second, "Timeout to wait for a graceful shutdown")
 	RootCmd.PersistentFlags().StringP("server-address", "a", ":6060", "Bind address for the http server")
 	RootCmd.PersistentFlags().DurationP("server-ping-timeout", "t", 10*time.Minute, "Ping endpoint timeout, use 0 to disable")
 	RootCmd.PersistentFlags().DurationP("server-shutdown-timeout", "s", 15*time.Second, "HTTP server shutdown timeout")
@@ -64,6 +65,7 @@ func init() {
 	_ = viper.BindPFlag("process.hide-stdout", RootCmd.PersistentFlags().Lookup("process-hide-stdout"))
 	_ = viper.BindPFlag("process.hide-stderr", RootCmd.PersistentFlags().Lookup("process-hide-stderr"))
 	_ = viper.BindPFlag("process.fail-on-stderr", RootCmd.PersistentFlags().Lookup("process-fail-on-stderr"))
+	_ = viper.BindPFlag("process.timeout", RootCmd.PersistentFlags().Lookup("process-timeout"))
 
 	_ = viper.BindPFlag("server.address", RootCmd.PersistentFlags().Lookup("server-address"))
 	_ = viper.BindPFlag("server.ping-timeout", RootCmd.PersistentFlags().Lookup("server-ping-timeout"))
@@ -196,8 +198,8 @@ func run(_ *cobra.Command, _ []string) error {
 	ctx, cancelWrapper := context.WithCancel(context.Background())
 
 	// start the wrapped process
-	wrapper := system.NewWrapperHandler(getRestartMode(), viper.GetBool("process.hide-stdout"),
-		viper.GetBool("process.hide-stderr"), viper.GetBool("process.fail-on-stderr"),
+	wrapper := system.NewWrapperHandler(getRestartMode(), viper.GetBool("process.hide-stdout"), viper.GetBool("process.hide-stderr"),
+		viper.GetBool("process.fail-on-stderr"), viper.GetDuration("process.timeout"),
 		viper.GetString("process.path"), viper.GetStringSlice("process.args")...)
 	wrapperData, wrapperDone := wrapper.Start(ctx)
 
