@@ -1473,14 +1473,14 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			}
 
 			// wait for the process wantErr log
-			time.Sleep(50 * time.Millisecond)
+			time.Sleep(60 * time.Millisecond)
 
 			if wrapperStatus != WrapperStatusError {
 				t.Errorf("expected wrapperStatus == WrapperStatusError, got %v", wrapperStatus)
 			}
 
 			// wait for the process to exit the first time
-			time.Sleep(50 * time.Millisecond)
+			time.Sleep(80 * time.Millisecond)
 
 			if wrapperStatus != tt.want.statusAfterFirstExit {
 				t.Errorf("expected wrapperStatus == %v, got %v", tt.want.statusAfterFirstExit, wrapperStatus)
@@ -1488,7 +1488,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 
 			if tt.args.cancelWhileRunning {
 				// wait for the process to restart
-				time.Sleep(50 * time.Millisecond)
+				time.Sleep(60 * time.Millisecond)
 
 				if wrapperStatus != WrapperStatusRunning {
 					t.Errorf("expected wrapperStatus == WrapperStatusRunning, got %v", wrapperStatus)
@@ -1500,6 +1500,8 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 
 			<-done
 			<-chanWrapperDone
+
+			time.Sleep(10 * time.Millisecond)
 
 			if !tt.want.err && wrapperStatus != WrapperStatusStopped {
 				t.Errorf("expected wrapperStatus != WrapperStatusStopped, got %v", wrapperStatus)
