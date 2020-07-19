@@ -1546,7 +1546,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 
 			mux.Lock()
 			if wrapperStatus != WrapperStatusStopped {
-				t.Errorf("expected wrapperStatus == WrapperStatusStopped, got %v", wrapperStatus)
+				t.Errorf("before start: expected wrapperStatus == WrapperStatusStopped, got %v", wrapperStatus)
 			}
 			mux.Unlock()
 
@@ -1558,7 +1558,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 
 			mux.Lock()
 			if wrapperStatus != WrapperStatusRunning {
-				t.Errorf("after:start expected wrapperStatus == WrapperStatusRunning, got %v", wrapperStatus)
+				t.Errorf("after start: expected wrapperStatus == WrapperStatusRunning, got %v", wrapperStatus)
 			}
 			mux.Unlock()
 
