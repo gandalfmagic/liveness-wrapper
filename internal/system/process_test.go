@@ -570,7 +570,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         210 * time.Millisecond,
+				timeToExit:         220 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
@@ -595,7 +595,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         210 * time.Millisecond,
+				timeToExit:         220 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
@@ -621,7 +621,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         210 * time.Millisecond,
+				timeToExit:         220 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
@@ -647,7 +647,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         210 * time.Millisecond,
+				timeToExit:         220 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
@@ -776,7 +776,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         210 * time.Millisecond,
+				timeToExit:         220 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
@@ -801,7 +801,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         210 * time.Millisecond,
+				timeToExit:         220 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
@@ -827,7 +827,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         210 * time.Millisecond,
+				timeToExit:         220 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
@@ -853,7 +853,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         210 * time.Millisecond,
+				timeToExit:         220 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
@@ -982,7 +982,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         210 * time.Millisecond,
+				timeToExit:         220 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
@@ -1007,7 +1007,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         210 * time.Millisecond,
+				timeToExit:         220 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
@@ -1033,7 +1033,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         210 * time.Millisecond,
+				timeToExit:         220 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
@@ -1058,7 +1058,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         210 * time.Millisecond,
+				timeToExit:         220 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
@@ -1185,7 +1185,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: true,
 				checkTimeout:       true,
-				timeToExit:         210 * time.Millisecond,
+				timeToExit:         220 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
