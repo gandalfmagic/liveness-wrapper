@@ -1235,7 +1235,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			// cancel the context to terminate the process
 			cancel()
 
-			// wait 1ms
+			// wait 0.5ms
 			time.Sleep(500 * time.Microsecond)
 
 			if wrapperStatus != tt.want.statusAfterCancel {
@@ -1244,7 +1244,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 
 			var timeoutStart time.Time
 			if tt.args.checkTimeout {
-				time.Sleep(1 * time.Millisecond) // Hack for GitHub
 				timeoutStart = time.Now()
 			}
 
@@ -1500,8 +1499,6 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 
 			<-done
 			<-chanWrapperDone
-
-			time.Sleep(10 * time.Millisecond)
 
 			if !tt.want.err && wrapperStatus != WrapperStatusStopped {
 				t.Errorf("expected wrapperStatus != WrapperStatusStopped, got %v", wrapperStatus)
