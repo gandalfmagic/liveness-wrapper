@@ -1244,7 +1244,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 
 			var timeoutStart time.Time
 			if tt.args.checkTimeout {
-				time.Sleep(1 * time.Millisecond)
+				time.Sleep(1 * time.Millisecond) // GitHub hack, not needed
 				timeoutStart = time.Now()
 			}
 
