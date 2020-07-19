@@ -304,6 +304,10 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 		timeout      time.Duration
 	}
 
+	type args struct {
+		exitImmediately bool
+	}
+
 	type want struct {
 		statusBeforeStart WrapperStatus
 		statusAfterStart  WrapperStatus
@@ -315,6 +319,7 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 	tests := []struct {
 		name   string
 		fields fields
+		args   args
 		want   want
 	}{
 		{
@@ -327,6 +332,9 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 				path:         filepath.Join(testDirectory, "test_int_no_err.sh"),
 				restart:      WrapperRestartNever,
 				timeout:      6 * time.Second,
+			},
+			args: args{
+				exitImmediately: false,
 			},
 			want: want{
 				statusBeforeStart: WrapperStatusStopped,
@@ -347,6 +355,9 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 				restart:      WrapperRestartNever,
 				timeout:      6 * time.Second,
 			},
+			args: args{
+				exitImmediately: true,
+			},
 			want: want{
 				statusBeforeStart: WrapperStatusStopped,
 				statusAfterStart:  WrapperStatusRunning,
@@ -365,6 +376,9 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 				path:         filepath.Join(testDirectory, "error_10_int_no_err.sh"),
 				restart:      WrapperRestartNever,
 				timeout:      6 * time.Second,
+			},
+			args: args{
+				exitImmediately: false,
 			},
 			want: want{
 				statusBeforeStart: WrapperStatusStopped,
@@ -385,6 +399,9 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 				restart:      WrapperRestartNever,
 				timeout:      6 * time.Second,
 			},
+			args: args{
+				exitImmediately: false,
+			},
 			want: want{
 				statusBeforeStart: WrapperStatusStopped,
 				statusAfterStart:  WrapperStatusRunning,
@@ -404,6 +421,9 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 				restart:      WrapperRestartNever,
 				timeout:      6 * time.Second,
 			},
+			args: args{
+				exitImmediately: true,
+			},
 			want: want{
 				statusBeforeStart: WrapperStatusStopped,
 				statusAfterStart:  WrapperStatusRunning,
@@ -422,6 +442,9 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 				path:         filepath.Join(testDirectory, "error_10_int_err.sh"),
 				restart:      WrapperRestartNever,
 				timeout:      6 * time.Second,
+			},
+			args: args{
+				exitImmediately: false,
 			},
 			want: want{
 				statusBeforeStart: WrapperStatusStopped,
@@ -481,7 +504,7 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 			go p.do(ctx, chanWrapperData, chanWrapperDone)
 
 			// wait to ensure the process is running
-			time.Sleep(30 * time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 
 			mux.Lock()
 			if tt.want.statusAfterStart != wrapperStatus {
@@ -491,14 +514,16 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 
 			cancel()
 
-			// wait to 5ms
-			time.Sleep(5 * time.Millisecond)
+			if !tt.args.exitImmediately {
+				// wait to 20ms
+				time.Sleep(20 * time.Millisecond)
 
-			mux.Lock()
-			if tt.want.statusAfterCancel != wrapperStatus {
-				t.Errorf("after cancel: expected wrapperStatus == %v, got %v", tt.want.statusAfterCancel, wrapperStatus)
+				mux.Lock()
+				if tt.want.statusAfterCancel != wrapperStatus {
+					t.Errorf("after cancel: expected wrapperStatus == %v, got %v", tt.want.statusAfterCancel, wrapperStatus)
+				}
+				mux.Unlock()
 			}
-			mux.Unlock()
 
 			<-done
 			<-chanWrapperDone
