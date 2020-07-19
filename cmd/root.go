@@ -79,18 +79,6 @@ func init() {
 	_ = viper.BindPFlag("log.level", RootCmd.PersistentFlags().Lookup("log-level"))
 }
 
-func convertToAbsProjectDirectory() {
-	dir := viper.GetString("project.directory")
-	if dir != "" {
-		absDir, err := filepath.Abs(dir)
-		logger.CheckFatal("cannot get absolute path", err)
-
-		if absDir != dir {
-			viper.Set("project.directory", absDir)
-		}
-	}
-}
-
 func printVersion() {
 	if showVersion {
 		fmt.Printf("liveness-wrapper %s -- %s\n", version, commit)
@@ -110,7 +98,6 @@ func persistentPreRunE(_ *cobra.Command, _ []string) error {
 	}
 
 	logger.Configure(os.Stdout, internal.RootName, viper.GetString("log.level"))
-	convertToAbsProjectDirectory()
 
 	return nil
 }
@@ -138,12 +125,12 @@ func readConfig() error {
 	return viper.ReadInConfig()
 }
 
-func getRestartMode() system.WrapperRestartMode {
-	if viper.GetBool("process.restart-always") {
+func getRestartMode(restartAlways, restartOnError bool) system.WrapperRestartMode {
+	if restartAlways {
 		return system.WrapperRestartAlways
 	}
 
-	if viper.GetBool("process.restart-on-error") {
+	if restartOnError {
 		return system.WrapperRestartOnError
 	}
 
@@ -204,7 +191,8 @@ func run(_ *cobra.Command, _ []string) error {
 	ctx, cancelWrapper := context.WithCancel(context.Background())
 
 	// start the wrapped process
-	wrapper := system.NewWrapperHandler(getRestartMode(), viper.GetBool("process.hide-stdout"), viper.GetBool("process.hide-stderr"),
+	restartMode := getRestartMode(viper.GetBool("process.restart-always"), viper.GetBool("process.restart-on-error"))
+	wrapper := system.NewWrapperHandler(restartMode, viper.GetBool("process.hide-stdout"), viper.GetBool("process.hide-stderr"),
 		viper.GetBool("process.fail-on-stderr"), viper.GetDuration("process.timeout"),
 		viper.GetString("process.path"), viper.GetStringSlice("process.args")...)
 	wrapperData, wrapperDone := wrapper.Start(ctx)

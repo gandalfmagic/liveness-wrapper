@@ -1,0 +1,14 @@
+log:
+  level: INFO
+process:
+  path: ../test/cmd/test_int_no_err.sh
+  fail-on-stderr: true
+  hide-stderr: false
+  hide-stdout: false
+  restart-always: false
+  restart-on-error: true
+  timeout: 31s
+server:
+  address: :6060
+  ping-timeout: 10m0s
+  shutdown-timeout: 15s
