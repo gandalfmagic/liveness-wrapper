@@ -179,12 +179,18 @@ func Test_runner_wait(t *testing.T) {
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /alive, got %v", rsp.StatusCode)
 		}
+		defer func() {
+			_ = rsp.Body.Close()
+		}()
 
 		// test ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
 		if rsp.StatusCode != 503 {
 			t.Errorf("Expected status code 503 on /alive, got %v", rsp.StatusCode)
 		}
+		defer func() {
+			_ = rsp.Body.Close()
+		}()
 
 		err := <-chanErr
 		if err != nil {
@@ -354,12 +360,18 @@ func Test_runner_wait(t *testing.T) {
 		if rsp.StatusCode != 503 {
 			t.Errorf("Expected status code 503 on /ready, got %v", rsp.StatusCode)
 		}
+		defer func() {
+			_ = rsp.Body.Close()
+		}()
 
 		// testing alive endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
 		if rsp.StatusCode != 200 {
 			t.Errorf("Expected status code 200 on /alive, got %v", rsp.StatusCode)
 		}
+		defer func() {
+			_ = rsp.Body.Close()
+		}()
 
 		err := <-chanErr
 		if err != nil {

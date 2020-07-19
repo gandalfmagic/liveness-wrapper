@@ -18,6 +18,12 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	defaultPingTimeout     = 10 * time.Minute
+	defaultProcessTimeout  = 30 * time.Second
+	defaultShutdownTimeout = 15 * time.Second
+)
+
 var (
 	// Used for flags.
 	config      string // config file location
@@ -47,10 +53,10 @@ func init() {
 	RootCmd.PersistentFlags().Bool("process-hide-stdout", false, "Hide the stdout of the wrapped process from the logs")
 	RootCmd.PersistentFlags().Bool("process-hide-stderr", false, "Hide the stderr of the wrapped process from the logs")
 	RootCmd.PersistentFlags().Bool("process-fail-on-stderr", false, "Mark the wrapped process as failed if it writes logs on stderr")
-	RootCmd.PersistentFlags().Duration("process-timeout", 30*time.Second, "Timeout to wait for a graceful shutdown")
+	RootCmd.PersistentFlags().Duration("process-timeout", defaultProcessTimeout, "Timeout to wait for a graceful shutdown")
 	RootCmd.PersistentFlags().StringP("server-address", "a", ":6060", "Bind address for the http server")
-	RootCmd.PersistentFlags().DurationP("server-ping-timeout", "t", 10*time.Minute, "Ping endpoint timeout, use 0 to disable")
-	RootCmd.PersistentFlags().DurationP("server-shutdown-timeout", "s", 15*time.Second, "HTTP server shutdown timeout")
+	RootCmd.PersistentFlags().DurationP("server-ping-timeout", "t", defaultPingTimeout, "Ping endpoint timeout, use 0 to disable")
+	RootCmd.PersistentFlags().DurationP("server-shutdown-timeout", "s", defaultShutdownTimeout, "HTTP server shutdown timeout")
 	RootCmd.PersistentFlags().String("log-level", "WARN", "Output level of logs (TRACE, DEBUG, INFO, WARN, ERROR, FATAL)")
 
 	// cli-only flags
