@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"github.com/spf13/viper"
 	"log"
 	"net/http"
 	"os"
@@ -15,6 +16,113 @@ import (
 )
 
 var testDirectory = "../test"
+
+func Test_readConfig(t *testing.T) {
+	t.Run("read_config", func(t *testing.T) {
+		config = "../test/config/liveness-wrapper.yaml"
+
+		if err := readConfig(); err != nil {
+			t.Errorf("no error was expected, got one: %s", err)
+		}
+
+		processPath := viper.GetString("process.path")
+		if processPath != "../test/cmd/test_int_no_err.sh" {
+			t.Errorf("process.path expected: %v, got %v", "../test/cmd/test_int_no_err.sh", processPath)
+		}
+
+		processFailOnStdErr := viper.GetBool("process.fail-on-stderr")
+		if !processFailOnStdErr {
+			t.Errorf("process.fail-on-stderr expected: %v, got %v", true, processFailOnStdErr)
+		}
+
+		processHideStdErr := viper.GetBool("process.hide-stderr")
+		if processHideStdErr {
+			t.Errorf("process.hide-stderr expected: %v, got %v", false, processHideStdErr)
+		}
+
+		processHideStdOut := viper.GetBool("process.hide-stdout")
+		if processHideStdOut {
+			t.Errorf("process.hide-stdout expected: %v, got %v", false, processHideStdOut)
+		}
+
+		processRestartAlways := viper.GetBool("process.restart-always")
+		if processRestartAlways {
+			t.Errorf("process.restart-always expected: %v, got %v", false, processRestartAlways)
+		}
+
+		processRestartOnError := viper.GetBool("process.restart-on-error")
+		if !processRestartOnError {
+			t.Errorf("process.restart-on-error expected: %v, got %v", true, processRestartOnError)
+		}
+
+		processRestartTimeout := viper.GetDuration("process.timeout")
+		if processRestartTimeout != 31*time.Second {
+			t.Errorf("process.timeout expected: %v, got %v", 31*time.Second, processRestartTimeout)
+		}
+
+		serverAddress := viper.GetString("server.address")
+		if serverAddress != ":6060" {
+			t.Errorf("process.timeout expected: %v, got %v", ":6060", serverAddress)
+		}
+
+		serverPingTimeout := viper.GetDuration("server.ping-timeout")
+		if serverPingTimeout != 10*time.Minute {
+			t.Errorf("process.ping-timeout expected: %v, got %v", 10*time.Minute, serverPingTimeout)
+		}
+
+		serverShutdownTimeout := viper.GetDuration("server.shutdown-timeout")
+		if serverShutdownTimeout != 15*time.Second {
+			t.Errorf("process.shutdown-timeout expected: %v, got %v", 15*time.Second, serverShutdownTimeout)
+		}
+
+		logLevel := viper.GetString("log.level")
+		if logLevel != "INFO" {
+			t.Errorf("log.level expected: %v, got %v", "INFO", logLevel)
+		}
+
+		config = ""
+	})
+}
+
+func Test_getRestartMode(t *testing.T) {
+	type args struct {
+		restartAlways  bool
+		restartOnError bool
+	}
+	tests := []struct {
+		name string
+		args args
+		want system.WrapperRestartMode
+	}{
+		{
+			name: "always",
+			args: args{true, false},
+			want: system.WrapperRestartAlways,
+		},
+		{
+			name: "always_and_on_error",
+			args: args{true, true},
+			want: system.WrapperRestartAlways,
+		},
+		{
+			name: "on_error",
+			args: args{false, true},
+			want: system.WrapperRestartOnError,
+		},
+		{
+			name: "never",
+			args: args{false, false},
+			want: system.WrapperRestartNever,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getRestartMode(tt.args.restartAlways, tt.args.restartOnError); got != tt.want {
+				t.Errorf("getRestartMode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
 
 func Test_runner_wait(t *testing.T) {
 	t.Run("Exit_without_error", func(t *testing.T) {
@@ -512,5 +620,21 @@ func Test_runner_wait(t *testing.T) {
 		if err != nil {
 			t.Errorf("after done: no error was expected, got %s", err)
 		}
+	})
+}
+
+func Test_run(t *testing.T) {
+	t.Run("run", func(t *testing.T) {
+		config = "../test/config/liveness-wrapper.yaml"
+
+		if err := readConfig(); err != nil {
+			t.Errorf("readConfig: no error was expected, got one: %s", err)
+		}
+
+		if err := run(nil, nil); err != nil {
+			t.Errorf("run: no error was expected, got one: %s", err)
+		}
+
+		config = ""
 	})
 }
