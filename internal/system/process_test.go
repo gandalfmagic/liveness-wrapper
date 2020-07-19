@@ -309,7 +309,7 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "test_int_no_err.sh"),
 				restart:      WrapperRestartNever,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			want: want{
 				statusBeforeStart: WrapperStatusStopped,
@@ -328,7 +328,7 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "test_0s_int_no_err.sh"),
 				restart:      WrapperRestartNever,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			want: want{
 				statusBeforeStart: WrapperStatusStopped,
@@ -347,7 +347,7 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_int_no_err.sh"),
 				restart:      WrapperRestartNever,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			want: want{
 				statusBeforeStart: WrapperStatusStopped,
@@ -366,7 +366,7 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "test_int_err.sh"),
 				restart:      WrapperRestartNever,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			want: want{
 				statusBeforeStart: WrapperStatusStopped,
@@ -385,7 +385,7 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "test_0s_int_err.sh"),
 				restart:      WrapperRestartNever,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			want: want{
 				statusBeforeStart: WrapperStatusStopped,
@@ -404,7 +404,7 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_int_err.sh"),
 				restart:      WrapperRestartNever,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			want: want{
 				statusBeforeStart: WrapperStatusStopped,
@@ -532,11 +532,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_int_no_err.sh"),
 				restart:      WrapperRestartOnError,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         140 * time.Millisecond,
+				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -557,11 +557,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_int_err.sh"),
 				restart:      WrapperRestartOnError,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         140 * time.Millisecond,
+				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -583,11 +583,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_int_no_err.sh"),
 				restart:      WrapperRestartOnError,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         140 * time.Millisecond,
+				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -609,11 +609,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_int_err.sh"),
 				restart:      WrapperRestartOnError,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         140 * time.Millisecond,
+				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -635,11 +635,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_0s_int_no_err.sh"),
 				restart:      WrapperRestartOnError,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         90 * time.Millisecond,
+				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -660,11 +660,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_0s_int_err.sh"),
 				restart:      WrapperRestartOnError,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         90 * time.Millisecond,
+				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -686,11 +686,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_0s_int_no_err.sh"),
 				restart:      WrapperRestartOnError,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         90 * time.Millisecond,
+				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -712,11 +712,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_0s_int_err.sh"),
 				restart:      WrapperRestartOnError,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         90 * time.Millisecond,
+				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -739,11 +739,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_int_no_err.sh"),
 				restart:      WrapperRestartAlways,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         140 * time.Millisecond,
+				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -764,11 +764,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_int_err.sh"),
 				restart:      WrapperRestartAlways,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         140 * time.Millisecond,
+				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -790,11 +790,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_int_no_err.sh"),
 				restart:      WrapperRestartAlways,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         140 * time.Millisecond,
+				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -816,11 +816,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_int_err.sh"),
 				restart:      WrapperRestartAlways,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         140 * time.Millisecond,
+				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -842,11 +842,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_0s_int_no_err.sh"),
 				restart:      WrapperRestartAlways,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         90 * time.Millisecond,
+				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -867,11 +867,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_0s_int_err.sh"),
 				restart:      WrapperRestartAlways,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         90 * time.Millisecond,
+				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -893,11 +893,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_0s_int_no_err.sh"),
 				restart:      WrapperRestartAlways,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         90 * time.Millisecond,
+				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -919,11 +919,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_0s_int_err.sh"),
 				restart:      WrapperRestartAlways,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         90 * time.Millisecond,
+				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -945,11 +945,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "test_int_no_err.sh"),
 				restart:      WrapperRestartAlways,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         140 * time.Millisecond,
+				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -970,11 +970,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "test_int_err.sh"),
 				restart:      WrapperRestartAlways,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         140 * time.Millisecond,
+				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -996,11 +996,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "test_int_no_err.sh"),
 				restart:      WrapperRestartAlways,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         140 * time.Millisecond,
+				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -1021,11 +1021,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "test_int_err.sh"),
 				restart:      WrapperRestartAlways,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         140 * time.Millisecond,
+				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -1046,11 +1046,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "test_0s_int_no_err.sh"),
 				restart:      WrapperRestartAlways,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         90 * time.Millisecond,
+				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -1071,11 +1071,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "test_0s_int_err.sh"),
 				restart:      WrapperRestartAlways,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         90 * time.Millisecond,
+				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -1097,11 +1097,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "test_0s_int_no_err.sh"),
 				restart:      WrapperRestartAlways,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         90 * time.Millisecond,
+				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -1122,11 +1122,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "test_0s_int_err.sh"),
 				restart:      WrapperRestartAlways,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         90 * time.Millisecond,
+				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -1152,7 +1152,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: true,
 				checkTimeout:       true,
-				timeToExit:         140 * time.Millisecond,
+				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
 				timeToRestart:      60 * time.Millisecond,
 			},
 			want: want{
@@ -1244,6 +1244,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 
 			var timeoutStart time.Time
 			if tt.args.checkTimeout {
+				time.Sleep(1 * time.Millisecond) // Hack for GitHub
 				timeoutStart = time.Now()
 			}
 
@@ -1315,7 +1316,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_error_log.sh"),
 				restart:      WrapperRestartOnError,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: true,
@@ -1334,7 +1335,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_error_log.sh"),
 				restart:      WrapperRestartOnError,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: false,
@@ -1353,7 +1354,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_error_log.sh"),
 				restart:      WrapperRestartAlways,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: true,
@@ -1372,7 +1373,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "error_10_error_log.sh"),
 				restart:      WrapperRestartAlways,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: false,
@@ -1391,7 +1392,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "test_error_log.sh"),
 				restart:      WrapperRestartAlways,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: true,
@@ -1410,7 +1411,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "test_error_log.sh"),
 				restart:      WrapperRestartAlways,
-				timeout:      1 * time.Second,
+				timeout:      6 * time.Second,
 			},
 			args: args{
 				cancelWhileRunning: false,
@@ -1461,24 +1462,24 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 				t.Errorf("expected wrapperStatus == WrapperStatusStopped, got %v", wrapperStatus)
 			}
 
-			t.Log("start the process")
+			// start the process
 			go p.do(ctx, chanWrapperData, chanWrapperDone)
 
-			t.Log("wait to ensure the process is running")
+			// wait to ensure the process is running
 			time.Sleep(10 * time.Millisecond)
 
 			if wrapperStatus != WrapperStatusRunning {
 				t.Errorf("expected wrapperStatus == WrapperStatusRunning, got %v", wrapperStatus)
 			}
 
-			t.Log("wait for the process wantErr log")
+			// wait for the process wantErr log
 			time.Sleep(50 * time.Millisecond)
 
 			if wrapperStatus != WrapperStatusError {
 				t.Errorf("expected wrapperStatus == WrapperStatusError, got %v", wrapperStatus)
 			}
 
-			t.Log("wait for the process to exit the first time")
+			// wait for the process to exit the first time
 			time.Sleep(50 * time.Millisecond)
 
 			if wrapperStatus != tt.want.statusAfterFirstExit {
@@ -1486,7 +1487,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			}
 
 			if tt.args.cancelWhileRunning {
-				t.Log("wait for the process to restart")
+				// wait for the process to restart
 				time.Sleep(50 * time.Millisecond)
 
 				if wrapperStatus != WrapperStatusRunning {
@@ -1494,10 +1495,12 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 				}
 			}
 
-			t.Log("cancel the context to terminate the process")
+			// cancel the context to terminate the process
 			cancel()
+
 			<-done
 			<-chanWrapperDone
+
 			if !tt.want.err && wrapperStatus != WrapperStatusStopped {
 				t.Errorf("expected wrapperStatus != WrapperStatusStopped, got %v", wrapperStatus)
 			}
