@@ -183,7 +183,7 @@ func (p *wrapperHandler) run(ctx context.Context, runError chan<- error, signalO
 					_ = cmd.Process.Kill()
 				case <-waitDone:
 					if waitTimeout != nil {
-						waitTimeout.Stop()
+						_ = waitTimeout.Stop()
 					}
 
 					done = true
@@ -327,7 +327,7 @@ func (p *wrapperHandler) do(ctx context.Context, chanWrapperData chan<- WrapperD
 			logger.Debugf("received the signal to close the wrapped process context")
 
 			if restartTimer.Stop() {
-				logger.Debugf("wrapped process is scheduled, but not started yes, exiting now")
+				logger.Debugf("wrapped process is scheduled, but not started yet, exit now")
 				return
 			}
 

@@ -80,7 +80,7 @@ func (s *server) do(ctx context.Context) {
 
 			s.isReady = false
 
-			timer.Stop()
+			_ = timer.Stop()
 			httpServerShutdown(ctx, s.server, s.shutdownTimeout)
 
 			return
