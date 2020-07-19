@@ -465,8 +465,8 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 
 			cancel()
 
-			// wait to 10ms
-			time.Sleep(10 * time.Millisecond)
+			// wait to 5ms
+			time.Sleep(5 * time.Millisecond)
 
 			if tt.want.statusAfterCancel != wrapperStatus {
 				t.Errorf("after cancel: expected wrapperStatus == %v, got %v", tt.want.statusAfterCancel, wrapperStatus)
@@ -1244,6 +1244,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 
 			var timeoutStart time.Time
 			if tt.args.checkTimeout {
+				time.Sleep(1 * time.Millisecond)
 				timeoutStart = time.Now()
 			}
 
