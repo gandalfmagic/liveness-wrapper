@@ -1558,25 +1558,25 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 
 			mux.Lock()
 			if wrapperStatus != WrapperStatusRunning {
-				t.Errorf("expected wrapperStatus == WrapperStatusRunning, got %v", wrapperStatus)
+				t.Errorf("after:start expected wrapperStatus == WrapperStatusRunning, got %v", wrapperStatus)
 			}
 			mux.Unlock()
 
 			// wait for the process wantErr log
-			time.Sleep(110 * time.Millisecond)
+			time.Sleep(130 * time.Millisecond)
 
 			mux.Lock()
 			if wrapperStatus != WrapperStatusError {
-				t.Errorf("expected wrapperStatus == WrapperStatusError, got %v", wrapperStatus)
+				t.Errorf("after error: expected wrapperStatus == WrapperStatusError, got %v", wrapperStatus)
 			}
 			mux.Unlock()
 
 			// wait for the process to exit the first time
-			time.Sleep(100 * time.Millisecond) // Hack for Github, should be 100
+			time.Sleep(110 * time.Millisecond)
 
 			mux.Lock()
 			if wrapperStatus != tt.want.statusAfterFirstExit {
-				t.Errorf("expected wrapperStatus == %v, got %v", tt.want.statusAfterFirstExit, wrapperStatus)
+				t.Errorf("after exit: expected wrapperStatus == %v, got %v", tt.want.statusAfterFirstExit, wrapperStatus)
 			}
 			mux.Unlock()
 
@@ -1586,7 +1586,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 
 				mux.Lock()
 				if wrapperStatus != WrapperStatusRunning {
-					t.Errorf("expected wrapperStatus == WrapperStatusRunning, got %v", wrapperStatus)
+					t.Errorf("after restart: expected wrapperStatus == WrapperStatusRunning, got %v", wrapperStatus)
 				}
 				mux.Unlock()
 			}
@@ -1599,25 +1599,25 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 
 			mux.Lock()
 			if !tt.want.err && wrapperStatus != WrapperStatusStopped {
-				t.Errorf("expected wrapperStatus != WrapperStatusStopped, got %v", wrapperStatus)
+				t.Errorf("after done: expected wrapperStatus != WrapperStatusStopped, got %v", wrapperStatus)
 			}
 			mux.Unlock()
 
 			mux.Lock()
 			if tt.want.err && wrapperStatus != WrapperStatusError {
-				t.Errorf("expected wrapperStatus != WrapperStatusError, got %v", wrapperStatus)
+				t.Errorf("after done: expected wrapperStatus != WrapperStatusError, got %v", wrapperStatus)
 			}
 			mux.Unlock()
 
 			mux.Lock()
 			if tt.want.err && wrapperError == nil {
-				t.Errorf("expected an wantErr, got %v", wrapperError)
+				t.Errorf("after done: expected an error, got %v", wrapperError)
 			}
 			mux.Unlock()
 
 			mux.Lock()
 			if !tt.want.err && wrapperError != nil {
-				t.Errorf("no wantErr expected, got %v", wrapperError)
+				t.Errorf("after done:  no error expected, got %v", wrapperError)
 			}
 			mux.Unlock()
 		})
