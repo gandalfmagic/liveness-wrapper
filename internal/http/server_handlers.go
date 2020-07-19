@@ -19,7 +19,9 @@ func writeToResponse(handler string, status int, w http.ResponseWriter) {
 
 func (s *server) ReadyHandler(w http.ResponseWriter, _ *http.Request) {
 	status := http.StatusOK
-	if !s.isReady {
+
+	isReady := s.IsReady()
+	if !isReady {
 		status = http.StatusServiceUnavailable
 	}
 
@@ -28,7 +30,9 @@ func (s *server) ReadyHandler(w http.ResponseWriter, _ *http.Request) {
 
 func (s *server) AliveHandler(w http.ResponseWriter, _ *http.Request) {
 	status := http.StatusOK
-	if !s.isAlive {
+
+	isAlive := s.IsAlive()
+	if !isAlive {
 		status = http.StatusServiceUnavailable
 	}
 

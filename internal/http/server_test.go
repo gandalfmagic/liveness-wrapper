@@ -31,11 +31,11 @@ func Test_server_do(t *testing.T) {
 		}
 		go s.do(ctx)
 
-		if s.isReady != false {
+		if s.IsReady() != false {
 			t.Errorf("isReady must be false: got %v", s.isReady)
 		}
 
-		if s.isAlive != false {
+		if s.IsAlive() != false {
 			t.Errorf("isAlive must be false: got %v", s.isAlive)
 		}
 
@@ -44,7 +44,7 @@ func Test_server_do(t *testing.T) {
 		// waiting for the status of isReady to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isReady != true {
+		if s.IsReady() != true {
 			t.Errorf("isReady must be true: got %v", s.isReady)
 		}
 
@@ -53,7 +53,7 @@ func Test_server_do(t *testing.T) {
 		// waiting for the status of isAlive to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isAlive != true {
+		if s.IsAlive() != true {
 			t.Errorf("isAlive must be true: got %v", s.isAlive)
 		}
 
@@ -62,14 +62,14 @@ func Test_server_do(t *testing.T) {
 		// waiting for the status of isAlive to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isAlive != true {
+		if s.IsAlive() != true {
 			t.Errorf("isAlive must be true: got %v", s.isAlive)
 		}
 
 		// let the timer expire
 		time.Sleep(110 * time.Millisecond)
 
-		if s.isAlive != false {
+		if s.IsAlive() != false {
 			t.Errorf("isAlive must be false: got %v", s.isAlive)
 		}
 
@@ -78,7 +78,7 @@ func Test_server_do(t *testing.T) {
 		// waiting for the status of isAlive to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isAlive != true {
+		if s.IsAlive() != true {
 			t.Errorf("isAlive must be true: got %v", s.isAlive)
 		}
 
@@ -87,14 +87,14 @@ func Test_server_do(t *testing.T) {
 		// waiting for the status of isAlive to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isAlive != false {
+		if s.IsAlive() != false {
 			t.Errorf("isAlive must be false: got %v", s.isAlive)
 		}
 
 		// let the timer expire again
 		time.Sleep(110 * time.Millisecond)
 
-		if s.isAlive != false {
+		if s.IsAlive() != false {
 			t.Errorf("isAlive must be false: got %v", s.isAlive)
 		}
 
@@ -103,7 +103,7 @@ func Test_server_do(t *testing.T) {
 		// waiting for the status of isReady to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isReady != false {
+		if s.IsReady() != false {
 			t.Errorf("isReady must be false: got %v", s.isReady)
 		}
 
@@ -136,11 +136,11 @@ func Test_server_do(t *testing.T) {
 		}
 		go s.do(ctx)
 
-		if s.isReady != false {
+		if s.IsReady() != false {
 			t.Errorf("isReady must be false: got %v", s.isReady)
 		}
 
-		if s.isAlive != false {
+		if s.IsAlive() != false {
 			t.Errorf("isAlive must be false: got %v", s.isAlive)
 		}
 
@@ -149,7 +149,7 @@ func Test_server_do(t *testing.T) {
 		// waiting for the status of isReady to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isReady != true {
+		if s.IsReady() != true {
 			t.Errorf("isReady must be true: got %v", s.isReady)
 		}
 
@@ -158,7 +158,7 @@ func Test_server_do(t *testing.T) {
 		// waiting for the status of isAlive to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isAlive != true {
+		if s.IsAlive() != true {
 			t.Errorf("isAlive must be true: got %v", s.isAlive)
 		}
 
@@ -167,14 +167,14 @@ func Test_server_do(t *testing.T) {
 		// waiting for the status of isAlive to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isAlive != true {
+		if s.IsAlive() != true {
 			t.Errorf("isAlive must be true: got %v", s.isAlive)
 		}
 
 		// let the timer expire
 		time.Sleep(110 * time.Millisecond)
 
-		if s.isAlive != true {
+		if s.IsAlive() != true {
 			t.Errorf("isAlive must be true: got %v", s.isAlive)
 		}
 
@@ -183,14 +183,14 @@ func Test_server_do(t *testing.T) {
 		// waiting for the status of isAlive to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isAlive != true {
+		if s.IsAlive() != true {
 			t.Errorf("isAlive must be true: got %v", s.isAlive)
 		}
 
 		// let the timer expire again
 		time.Sleep(110 * time.Millisecond)
 
-		if s.isAlive != true {
+		if s.IsAlive() != true {
 			t.Errorf("isAlive must be true: got %v", s.isAlive)
 		}
 
@@ -199,7 +199,7 @@ func Test_server_do(t *testing.T) {
 		// waiting for the status of isAlive to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isAlive != false {
+		if s.IsAlive() != false {
 			t.Errorf("isAlive must be false: got %v", s.isAlive)
 		}
 
@@ -208,7 +208,7 @@ func Test_server_do(t *testing.T) {
 		// waiting for the status of isReady to be updated
 		time.Sleep(1 * time.Millisecond)
 
-		if s.isReady != false {
+		if s.IsReady() != false {
 			t.Errorf("isReady must be false: got %v", s.isReady)
 		}
 

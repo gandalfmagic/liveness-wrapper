@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -121,7 +122,7 @@ func Test_wrapperHandler_canRestart(t *testing.T) {
 	}
 }
 
-// testing a simple execution of the process, without context cancel
+// testing a simple execution of the process, without context cancel.
 func Test_wrapperHandler_do(t *testing.T) {
 	type fields struct {
 		arg          []string
@@ -228,22 +229,28 @@ func Test_wrapperHandler_do(t *testing.T) {
 
 			// start the main process to update wrapperStatus and wrapperError
 			// from the internal events of the process
+			var mux sync.Mutex
 			var wrapperStatus WrapperStatus
 			var wrapperError error
 			go func() {
 				defer close(done)
 				for wd := range chanWrapperData {
+					mux.Lock()
 					wrapperStatus = wd.WrapperStatus
 					wrapperError = wd.Err
 					if wd.Done {
+						mux.Unlock()
 						return
 					}
+					mux.Unlock()
 				}
 			}()
 
+			mux.Lock()
 			if wrapperStatus != tt.want.statusBeforeStart {
 				t.Errorf("expected wrapperStatus == %v, got %v", tt.want.statusBeforeStart, wrapperStatus)
 			}
+			mux.Unlock()
 
 			// prepare a simple context with no cancel
 			ctx := context.Background()
@@ -254,26 +261,34 @@ func Test_wrapperHandler_do(t *testing.T) {
 			// wait to ensure the process is running
 			time.Sleep(10 * time.Millisecond)
 
-			if tt.want.statusAfterStart != wrapperStatus {
+			mux.Lock()
+			if wrapperStatus != tt.want.statusAfterStart {
 				t.Errorf("after start: expected wrapperStatus == %v, got %v", tt.want.statusAfterStart, wrapperStatus)
 			}
+			mux.Unlock()
 
 			<-done
 			<-chanWrapperDone
 
 			// wait 10ms after the process stopped signal
 			time.Sleep(10 * time.Millisecond)
+			mux.Lock()
 			if tt.want.statusAfterDone != wrapperStatus {
 				t.Errorf("after stop: expected wrapperStatus == %v, got %v", tt.want.statusAfterDone, wrapperStatus)
 			}
+			mux.Unlock()
 
+			mux.Lock()
 			if tt.want.wantErr && wrapperError == nil {
 				t.Errorf("expected an wantErr, got %v", wrapperError)
 			}
+			mux.Unlock()
 
+			mux.Lock()
 			if !tt.want.wantErr && wrapperError != nil {
 				t.Errorf("no wantErr expected, got %v", wrapperError)
 			}
+			mux.Unlock()
 		})
 	}
 }
@@ -288,6 +303,7 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 		restart      WrapperRestartMode
 		timeout      time.Duration
 	}
+
 	type want struct {
 		statusBeforeStart WrapperStatus
 		statusAfterStart  WrapperStatus
@@ -295,6 +311,7 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 		statusAfterDone   WrapperStatus
 		wantErr           bool
 	}
+
 	tests := []struct {
 		name   string
 		fields fields
@@ -415,6 +432,7 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 			},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &wrapperHandler{
@@ -433,22 +451,28 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 
 			// start the main process to update wrapperStatus and wrapperError
 			// from the internal events of the process
+			var mux sync.Mutex
 			var wrapperStatus WrapperStatus
 			var wrapperError error
 			go func() {
 				defer close(done)
 				for wd := range chanWrapperData {
+					mux.Lock()
 					wrapperStatus = wd.WrapperStatus
 					wrapperError = wd.Err
 					if wd.Done {
+						mux.Unlock()
 						return
 					}
+					mux.Unlock()
 				}
 			}()
 
+			mux.Lock()
 			if wrapperStatus != tt.want.statusBeforeStart {
 				t.Errorf("expected wrapperStatus == %v, got %v", tt.want.statusBeforeStart, wrapperStatus)
 			}
+			mux.Unlock()
 
 			// prepare a context with cancel
 			ctx, cancel := context.WithCancel(context.Background())
@@ -459,35 +483,45 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 			// wait to ensure the process is running
 			time.Sleep(30 * time.Millisecond)
 
+			mux.Lock()
 			if tt.want.statusAfterStart != wrapperStatus {
 				t.Errorf("after start: expected wrapperStatus == %v, got %v", tt.want.statusAfterStart, wrapperStatus)
 			}
+			mux.Unlock()
 
 			cancel()
 
 			// wait to 5ms
 			time.Sleep(5 * time.Millisecond)
 
+			mux.Lock()
 			if tt.want.statusAfterCancel != wrapperStatus {
 				t.Errorf("after cancel: expected wrapperStatus == %v, got %v", tt.want.statusAfterCancel, wrapperStatus)
 			}
+			mux.Unlock()
 
 			<-done
 			<-chanWrapperDone
 
 			// wait 10ms after the process stopped signal
 			time.Sleep(10 * time.Millisecond)
+			mux.Lock()
 			if tt.want.statusAfterDone != wrapperStatus {
 				t.Errorf("after stop: expected wrapperStatus == %v, got %v", tt.want.statusAfterDone, wrapperStatus)
 			}
+			mux.Unlock()
 
+			mux.Lock()
 			if tt.want.wantErr && wrapperError == nil {
 				t.Errorf("expected an wantErr, got %v", wrapperError)
 			}
+			mux.Unlock()
 
+			mux.Lock()
 			if !tt.want.wantErr && wrapperError != nil {
 				t.Errorf("no wantErr expected, got %v", wrapperError)
 			}
+			mux.Unlock()
 		})
 	}
 }
@@ -1186,22 +1220,28 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 
 			// start the main process to update wrapperStatus and wrapperError
 			// from the internal events of the process
+			var mux sync.Mutex
 			var wrapperStatus WrapperStatus
 			var wrapperError error
 			go func() {
 				defer close(done)
 				for wd := range chanWrapperData {
+					mux.Lock()
 					wrapperStatus = wd.WrapperStatus
 					wrapperError = wd.Err
 					if wd.Done {
+						mux.Unlock()
 						return
 					}
+					mux.Unlock()
 				}
 			}()
 
+			mux.Lock()
 			if wrapperStatus != WrapperStatusStopped {
 				t.Errorf("before start: expected wrapperStatus == WrapperStatusStopped, got %v", wrapperStatus)
 			}
+			mux.Unlock()
 
 			// create the context
 			ctx, cancel := context.WithCancel(context.Background())
@@ -1212,24 +1252,30 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			// wait to ensure the process is running
 			time.Sleep(10 * time.Millisecond)
 
+			mux.Lock()
 			if wrapperStatus != tt.want.statusAfterStart {
 				t.Errorf("after start: expected wrapperStatus == %v, got %v", tt.want.statusAfterStart, wrapperStatus)
 			}
+			mux.Unlock()
 
 			// wait for the process exit for the first time
 			time.Sleep(tt.args.timeToExit)
 
+			mux.Lock()
 			if wrapperStatus != tt.want.statusAfterFirstExit {
 				t.Errorf("after first exit: expected wrapperStatus == %v, got %v", tt.want.statusAfterFirstExit, wrapperStatus)
 			}
+			mux.Unlock()
 
 			if tt.args.cancelWhileRunning {
 				// wait for the process to restart
 				time.Sleep(tt.args.timeToRestart)
 
+				mux.Lock()
 				if wrapperStatus != tt.want.statusAfterRestart {
 					t.Errorf("after restart: expected wrapperStatus == %v, got %v", tt.want.statusAfterRestart, wrapperStatus)
 				}
+				mux.Unlock()
 			}
 
 			// cancel the context to terminate the process
@@ -1238,9 +1284,11 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			// wait 0.5ms
 			time.Sleep(500 * time.Microsecond)
 
+			mux.Lock()
 			if wrapperStatus != tt.want.statusAfterCancel {
 				t.Errorf("after cancel: expected wrapperStatus == %v, got %v", tt.want.statusAfterCancel, wrapperStatus)
 			}
+			mux.Unlock()
 
 			var timeoutStart time.Time
 			if tt.args.checkTimeout {
@@ -1263,23 +1311,31 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			// wait 1ms
 			time.Sleep(1 * time.Millisecond)
 
+			mux.Lock()
 			if wrapperStatus != tt.want.statusAfterDone {
 				t.Errorf("after done: expected wrapperStatus == %v, got %v", tt.want.statusAfterDone, wrapperStatus)
 			}
+			mux.Unlock()
 
+			mux.Lock()
 			if tt.want.wantErr && wrapperError == nil {
 				t.Errorf("after done: expected an error, got %v", wrapperError)
 			}
+			mux.Unlock()
 
+			mux.Lock()
 			if !tt.want.wantErr && wrapperError != nil {
 				t.Errorf("after done: no error expected, got %v", wrapperError)
 			}
+			mux.Unlock()
 
+			mux.Lock()
 			if exitStatusError, ok := wrapperError.(ProcessExitStatusError); tt.want.wantErr && ok {
 				if exitStatusError.ExitStatus() != tt.want.statusError {
 					t.Errorf("after done: expected exit status == %v, got %v", tt.want.statusError, exitStatusError.ExitStatus())
 				}
 			}
+			mux.Unlock()
 		})
 	}
 }
@@ -1445,22 +1501,30 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			chanWrapperDone := make(chan struct{})
 			done := make(chan struct{})
 
+			// start the main process to update wrapperStatus and wrapperError
+			// from the internal events of the process
+			var mux sync.Mutex
 			var wrapperStatus WrapperStatus
 			var wrapperError error
 			go func() {
 				defer close(done)
 				for wd := range chanWrapperData {
+					mux.Lock()
 					wrapperStatus = wd.WrapperStatus
 					wrapperError = wd.Err
 					if wd.Done {
+						mux.Unlock()
 						return
 					}
+					mux.Unlock()
 				}
 			}()
 
+			mux.Lock()
 			if wrapperStatus != WrapperStatusStopped {
 				t.Errorf("expected wrapperStatus == WrapperStatusStopped, got %v", wrapperStatus)
 			}
+			mux.Unlock()
 
 			// start the process
 			go p.do(ctx, chanWrapperData, chanWrapperDone)
@@ -1468,31 +1532,39 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			// wait to ensure the process is running
 			time.Sleep(10 * time.Millisecond)
 
+			mux.Lock()
 			if wrapperStatus != WrapperStatusRunning {
 				t.Errorf("expected wrapperStatus == WrapperStatusRunning, got %v", wrapperStatus)
 			}
+			mux.Unlock()
 
 			// wait for the process wantErr log
 			time.Sleep(60 * time.Millisecond)
 
+			mux.Lock()
 			if wrapperStatus != WrapperStatusError {
 				t.Errorf("expected wrapperStatus == WrapperStatusError, got %v", wrapperStatus)
 			}
+			mux.Unlock()
 
 			// wait for the process to exit the first time
 			time.Sleep(80 * time.Millisecond) // Hack for Github, should be 60
 
+			mux.Lock()
 			if wrapperStatus != tt.want.statusAfterFirstExit {
 				t.Errorf("expected wrapperStatus == %v, got %v", tt.want.statusAfterFirstExit, wrapperStatus)
 			}
+			mux.Unlock()
 
 			if tt.args.cancelWhileRunning {
 				// wait for the process to restart
 				time.Sleep(60 * time.Millisecond)
 
+				mux.Lock()
 				if wrapperStatus != WrapperStatusRunning {
 					t.Errorf("expected wrapperStatus == WrapperStatusRunning, got %v", wrapperStatus)
 				}
+				mux.Unlock()
 			}
 
 			// cancel the context to terminate the process
@@ -1501,21 +1573,29 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			<-done
 			<-chanWrapperDone
 
+			mux.Lock()
 			if !tt.want.err && wrapperStatus != WrapperStatusStopped {
 				t.Errorf("expected wrapperStatus != WrapperStatusStopped, got %v", wrapperStatus)
 			}
+			mux.Unlock()
 
+			mux.Lock()
 			if tt.want.err && wrapperStatus != WrapperStatusError {
 				t.Errorf("expected wrapperStatus != WrapperStatusError, got %v", wrapperStatus)
 			}
+			mux.Unlock()
 
+			mux.Lock()
 			if tt.want.err && wrapperError == nil {
 				t.Errorf("expected an wantErr, got %v", wrapperError)
 			}
+			mux.Unlock()
 
+			mux.Lock()
 			if !tt.want.err && wrapperError != nil {
 				t.Errorf("no wantErr expected, got %v", wrapperError)
 			}
+			mux.Unlock()
 		})
 	}
 }
