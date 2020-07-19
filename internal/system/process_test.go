@@ -564,6 +564,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 	type args struct {
 		cancelWhileRunning bool
 		checkTimeout       bool
+		exitImmediately    bool
 		timeToExit         time.Duration
 		timeToRestart      time.Duration
 	}
@@ -698,6 +699,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
+				exitImmediately:    true,
 				timeToExit:         130 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
@@ -723,6 +725,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
+				exitImmediately:    true,
 				timeToExit:         130 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
@@ -749,6 +752,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
+				exitImmediately:    true,
 				timeToExit:         130 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
@@ -775,6 +779,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
+				exitImmediately:    true,
 				timeToExit:         130 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
@@ -904,6 +909,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
+				exitImmediately:    true,
 				timeToExit:         130 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
@@ -929,6 +935,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
+				exitImmediately:    true,
 				timeToExit:         130 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
@@ -955,6 +962,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
+				exitImmediately:    true,
 				timeToExit:         130 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
@@ -981,6 +989,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
+				exitImmediately:    true,
 				timeToExit:         130 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
@@ -1108,6 +1117,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
+				exitImmediately:    true,
 				timeToExit:         130 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
@@ -1133,6 +1143,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
+				exitImmediately:    true,
 				timeToExit:         130 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
@@ -1159,6 +1170,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
+				exitImmediately:    true,
 				timeToExit:         130 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
@@ -1184,6 +1196,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
+				exitImmediately:    true,
 				timeToExit:         130 * time.Millisecond,
 				timeToRestart:      50 * time.Millisecond,
 			},
@@ -1205,7 +1218,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdOut:   false,
 				path:         filepath.Join(testDirectory, "test_int_no_err.sh"),
 				restart:      WrapperRestartAlways,
-				timeout:      10 * time.Millisecond,
+				timeout:      50 * time.Millisecond,
 			},
 			args: args{
 				cancelWhileRunning: true,
@@ -1305,14 +1318,15 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			// cancel the context to terminate the process
 			cancel()
 
-			// wait 0.5ms
-			time.Sleep(500 * time.Microsecond)
+			if !tt.args.exitImmediately {
+				time.Sleep(20 * time.Millisecond)
 
-			mux.Lock()
-			if wrapperStatus != tt.want.statusAfterCancel {
-				t.Errorf("after cancel: expected wrapperStatus == %v, got %v", tt.want.statusAfterCancel, wrapperStatus)
+				mux.Lock()
+				if wrapperStatus != tt.want.statusAfterCancel {
+					t.Errorf("after cancel: expected wrapperStatus == %v, got %v", tt.want.statusAfterCancel, wrapperStatus)
+				}
+				mux.Unlock()
 			}
-			mux.Unlock()
 
 			var timeoutStart time.Time
 			if tt.args.checkTimeout {
