@@ -537,7 +537,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: true,
 				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -562,7 +562,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: true,
 				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -588,7 +588,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: false,
 				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -614,7 +614,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: false,
 				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -640,7 +640,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: true,
 				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -665,7 +665,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: true,
 				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -691,7 +691,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: false,
 				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -717,7 +717,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: false,
 				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -744,7 +744,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: true,
 				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -769,7 +769,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: true,
 				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -795,7 +795,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: false,
 				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -821,7 +821,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: false,
 				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -847,7 +847,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: true,
 				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -872,7 +872,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: true,
 				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -898,7 +898,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: false,
 				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -924,7 +924,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: false,
 				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -950,7 +950,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: true,
 				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -975,7 +975,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: true,
 				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -1001,7 +1001,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: false,
 				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -1026,7 +1026,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: false,
 				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -1051,7 +1051,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: true,
 				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -1076,7 +1076,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: true,
 				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -1102,7 +1102,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: false,
 				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -1127,7 +1127,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: false,
 				timeToExit:         80 * time.Millisecond, // Hack for GitHub, should be 60ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -1153,7 +1153,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				cancelWhileRunning: true,
 				checkTimeout:       true,
 				timeToExit:         140 * time.Millisecond, // hack for gitHub, should be 110ms
-				timeToRestart:      60 * time.Millisecond,
+				timeToRestart:      50 * time.Millisecond,
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
