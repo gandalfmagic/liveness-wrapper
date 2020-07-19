@@ -383,7 +383,7 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelFuncHttp := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 15*time.Millisecond)
+		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 50*time.Millisecond)
 		updateReady, updateAlive, serverDone := server.Start(ctx)
 
 		ctx, cancelFuncProcess := context.WithCancel(context.Background())
@@ -418,99 +418,99 @@ func Test_runner_wait(t *testing.T) {
 		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
 		if rsp.StatusCode != 200 {
-			t.Errorf("Expected status code 200 on /ready, got %v", rsp.StatusCode)
+			t.Errorf("after start: expected status code 200 on /ready, got %v", rsp.StatusCode)
 		}
 
 		// testing alive endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
 		if rsp.StatusCode != 200 {
-			t.Errorf("Expected status code 200 on /alive, got %v", rsp.StatusCode)
+			t.Errorf("after start: expected status code 200 on /alive, got %v", rsp.StatusCode)
 		}
 
 		// send request to the /ping endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ping")
 		if rsp.StatusCode != 200 {
-			t.Errorf("Expected status code 200 on /ping, got %v", rsp.StatusCode)
+			t.Errorf("after start: expected status code 200 on /ping, got %v", rsp.StatusCode)
 		}
 
 		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
 		if rsp.StatusCode != 200 {
-			t.Errorf("Expected status code 200 on /ready, got %v", rsp.StatusCode)
+			t.Errorf("after start: expected status code 200 on /ready, got %v", rsp.StatusCode)
 		}
 
 		// testing alive endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
 		if rsp.StatusCode != 200 {
-			t.Errorf("Expected status code 200 on /alive, got %v", rsp.StatusCode)
+			t.Errorf("after start: expected status code 200 on /alive, got %v", rsp.StatusCode)
 		}
 
-		// wait 15ms for the /ping timeout to expire
-		time.Sleep(15 * time.Millisecond)
+		// wait 60ms for the /ping timeout to expire
+		time.Sleep(60 * time.Millisecond)
 
 		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
 		if rsp.StatusCode != 200 {
-			t.Errorf("Expected status code 200 on /ready, got %v", rsp.StatusCode)
+			t.Errorf("after 1st expiration: expected status code 200 on /ready, got %v", rsp.StatusCode)
 		}
 
 		// testing alive endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
 		if rsp.StatusCode != 503 {
-			t.Errorf("Expected status code 503 on /alive, got %v", rsp.StatusCode)
+			t.Errorf("after 1st expiration: expected status code 503 on /alive, got %v", rsp.StatusCode)
 		}
 
 		// send request to the /ping endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ping")
 		if rsp.StatusCode != 200 {
-			t.Errorf("Expected status code 200 on /ping, got %v", rsp.StatusCode)
+			t.Errorf("after 1st expiration: expected status code 200 on /ping, got %v", rsp.StatusCode)
 		}
 
 		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
 		if rsp.StatusCode != 200 {
-			t.Errorf("Expected status code 200 on /ready, got %v", rsp.StatusCode)
+			t.Errorf("after 1st expiration: expected status code 200 on /ready, got %v", rsp.StatusCode)
 		}
 
 		// testing alive endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
 		if rsp.StatusCode != 200 {
-			t.Errorf("Expected status code 200 on /alive, got %v", rsp.StatusCode)
+			t.Errorf("after 1st expiration: expected status code 200 on /alive, got %v", rsp.StatusCode)
 		}
 
-		// wait 10ms, 5ms before the ping endpoint expires
-		time.Sleep(10 * time.Millisecond)
+		// wait 30ms, 20ms before the ping endpoint expires
+		time.Sleep(30 * time.Millisecond)
 
 		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
 		if rsp.StatusCode != 200 {
-			t.Errorf("Expected status code 200 on /ready, got %v", rsp.StatusCode)
+			t.Errorf("before 2nd expiration: expected status code 200 on /ready, got %v", rsp.StatusCode)
 		}
 
 		// testing alive endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
 		if rsp.StatusCode != 200 {
-			t.Errorf("Expected status code 200 on /alive, got %v", rsp.StatusCode)
+			t.Errorf("before 2nd expiration: expected status code 200 on /alive, got %v", rsp.StatusCode)
 		}
 
-		// wait 5ms for the /ping timeout to expire
-		time.Sleep(5 * time.Millisecond)
+		// wait 30ms for the /ping timeout to expire
+		time.Sleep(30 * time.Millisecond)
 
 		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
 		if rsp.StatusCode != 200 {
-			t.Errorf("Expected status code 200 on /ready, got %v", rsp.StatusCode)
+			t.Errorf("after 2nd expiration: expected status code 200 on /ready, got %v", rsp.StatusCode)
 		}
 
 		// testing alive endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
 		if rsp.StatusCode != 503 {
-			t.Errorf("Expected status code 503 on /alive, got %v", rsp.StatusCode)
+			t.Errorf("after 2nd expiration: expected status code 503 on /alive, got %v", rsp.StatusCode)
 		}
 
 		err := <-chanErr
 		if err != nil {
-			t.Errorf("no error was expected, got %s", err)
+			t.Errorf("after done: no error was expected, got %s", err)
 		}
 	})
 }
