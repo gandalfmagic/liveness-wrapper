@@ -29,19 +29,21 @@ Usage:
   liveness-wrapper [flags]
 
 Flags:
-  -c, --config string                  Path to config file (with extension)
-  -h, --help                           help for liveness-wrapper
-      --log-level string               Output level of logs (TRACE, DEBUG, INFO, WARN, ERROR, FATAL) (default "WARN")
-      --process-args strings           Comma separated list of arguments for the child process
-      --process-fail-on-stderr         Mark the child process as failed if it writes logs on stderr
-      --process-hide-stderr            Hide the stderr of the child process from the logs
-      --process-hide-stdout            Hide the stdout of the child process from the logs
-  -p, --process-path string            Path of the child process executable
-  -r, --process-restart-always         Always restart the child process when it ends
-  -e, --process-restart-on-error       Restart the child process only when it fails
-  -a, --server-address string          Bind address for the http server (default ":6060")
-  -t, --server-ping-timeout duration   Ping endpoint timeout, use 0 to disable (default 10m0s)
-  -v, --version                        Display the current version of this CLI
+  -c, --config string                      Path to config file (with extension)
+  -h, --help                               help for liveness-wrapper
+      --log-level string                   Output level of logs (TRACE, DEBUG, INFO, WARN, ERROR, FATAL) (default "WARN")
+      --process-args strings               Comma separated list of arguments for the wrapped process
+      --process-fail-on-stderr             Mark the wrapped process as failed if it writes logs on stderr
+      --process-hide-stderr                Hide the stderr of the wrapped process from the logs
+      --process-hide-stdout                Hide the stdout of the wrapped process from the logs
+  -p, --process-path string                Path of the wrapped process executable
+  -r, --process-restart-always             Always restart the wrapped process when it ends
+  -e, --process-restart-on-error           Restart the wrapped process only when it fails
+      --process-timeout duration           Timeout to wait for a graceful shutdown (default 30s)
+  -a, --server-address string              Bind address for the http server (default ":6060")
+  -t, --server-ping-timeout duration       Ping endpoint timeout, use 0 to disable (default 10m0s)
+  -s, --server-shutdown-timeout duration   HTTP server shutdown timeout (default 15s)
+  -v, --version                            Display the current version of this CLI
 ```
 
 ## Configuration file
@@ -60,14 +62,16 @@ process:
   - value1
   - -flag2
   - value2
-  fail-on-stderr: true 
+  fail-on-stderr: true
   hide-stderr: false
-  hide-stdout: true 
+  hide-stdout: true
   restart-always: false
-  restart-on-error: true 
+  restart-on-error: true
+  timeout: 30s
 server:
   address: :6060
   ping-timeout: 10m0s
+  shutdown-timeout: 15s
 ```
 
 ## Deployment on Kubernetes
