@@ -1236,7 +1236,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			cancel()
 
 			// wait 1ms
-			time.Sleep(5 * time.Millisecond) // GitHub hack, should be 1ms
+			time.Sleep(500 * time.Microsecond)
 
 			if wrapperStatus != tt.want.statusAfterCancel {
 				t.Errorf("after cancel: expected wrapperStatus == %v, got %v", tt.want.statusAfterCancel, wrapperStatus)
