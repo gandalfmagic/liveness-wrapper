@@ -247,7 +247,7 @@ func Test_runner_wait(t *testing.T) {
 		}
 
 		// wait for the process to terminate with error
-		time.Sleep(210 * time.Millisecond) // 100ms normal execution + 100ms after exit
+		time.Sleep(220 * time.Millisecond) // 100ms normal execution + 100ms after exit
 
 		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
@@ -320,7 +320,7 @@ func Test_runner_wait(t *testing.T) {
 		}
 
 		// wait for the process to terminate with error
-		time.Sleep(210 * time.Millisecond)
+		time.Sleep(220 * time.Millisecond)
 
 		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
