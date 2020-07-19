@@ -514,6 +514,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 		statusAfterRestart   WrapperStatus
 		statusAfterCancel    WrapperStatus
 		statusAfterDone      WrapperStatus
+		statusError          int
 		wantErr              bool
 	}
 	tests := []struct {
@@ -569,6 +570,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterRestart:   WrapperStatusRunning,
 				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusError,
+				statusError:          131,
 				wantErr:              true,
 			},
 		},
@@ -594,6 +596,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterRestart:   WrapperStatusRunning,
 				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
+				statusError:          10,
 				wantErr:              true,
 			},
 		},
@@ -619,6 +622,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterRestart:   WrapperStatusRunning,
 				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
+				statusError:          10,
 				wantErr:              true,
 			},
 		},
@@ -669,6 +673,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterRestart:   WrapperStatusRunning,
 				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusError,
+				statusError:          131,
 				wantErr:              true,
 			},
 		},
@@ -694,6 +699,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterRestart:   WrapperStatusRunning,
 				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
+				statusError:          10,
 				wantErr:              true,
 			},
 		},
@@ -719,6 +725,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterRestart:   WrapperStatusRunning,
 				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
+				statusError:          10,
 				wantErr:              true,
 			},
 		},
@@ -770,6 +777,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterRestart:   WrapperStatusRunning,
 				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusError,
+				statusError:          131,
 				wantErr:              true,
 			},
 		},
@@ -795,6 +803,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterRestart:   WrapperStatusRunning,
 				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
+				statusError:          10,
 				wantErr:              true,
 			},
 		},
@@ -820,6 +829,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterRestart:   WrapperStatusRunning,
 				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
+				statusError:          10,
 				wantErr:              true,
 			},
 		},
@@ -870,6 +880,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterRestart:   WrapperStatusRunning,
 				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusError,
+				statusError:          131,
 				wantErr:              true,
 			},
 		},
@@ -895,6 +906,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterRestart:   WrapperStatusRunning,
 				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
+				statusError:          10,
 				wantErr:              true,
 			},
 		},
@@ -920,6 +932,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterRestart:   WrapperStatusRunning,
 				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
+				statusError:          10,
 				wantErr:              true,
 			},
 		},
@@ -970,6 +983,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterRestart:   WrapperStatusRunning,
 				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusError,
+				statusError:          131,
 				wantErr:              true,
 			},
 		},
@@ -1070,6 +1084,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterRestart:   WrapperStatusRunning,
 				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusError,
+				statusError:          131,
 				wantErr:              true,
 			},
 		},
@@ -1146,6 +1161,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterRestart:   WrapperStatusRunning,
 				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusError,
+				statusError:          255,
 				wantErr:              true,
 			},
 		},
@@ -1251,11 +1267,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			}
 
 			if tt.want.wantErr && wrapperError == nil {
-				t.Errorf("expected an wantErr, got %v", wrapperError)
+				t.Errorf("after done: expected an error, got %v", wrapperError)
 			}
 
 			if !tt.want.wantErr && wrapperError != nil {
-				t.Errorf("no wantErr expected, got %v", wrapperError)
+				t.Errorf("after done: no error expected, got %v", wrapperError)
+			}
+
+			if exitStatusError, ok := wrapperError.(ProcessExitStatusError); tt.want.wantErr && ok {
+				if exitStatusError.ExitStatus() != tt.want.statusError {
+					t.Errorf("after done: expected exit status == %v, got %v", tt.want.statusError, exitStatusError.ExitStatus())
+				}
 			}
 		})
 	}
