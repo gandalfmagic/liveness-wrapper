@@ -1,8 +1,8 @@
 #!/bin/sh
 
-trap '>&2 echo "INT SIGNAL"; exit 131' INT
-trap 'i=1; while [ $i -le 10 ]; do sleep 0.01; echo EXIT ${i}0ms; i=$(( i + 1 )); done' EXIT
+trap '>&2 echo "INT SIGNAL"; sleep 0.1; exit 131' INT
+trap 'i=0; while [ $i -le 9 ]; do i=$(( i + 1 )); sleep 0.01; echo EXIT ${i}0ms; done' EXIT
 
-i=1; while [ $i -le 10 ]; do sleep 0.01; echo ${i}0ms; i=$(( i + 1 )); done
+i=0; while [ $i -le 9 ]; do i=$(( i + 1 )); sleep 0.01; echo ${i}0ms; done
 
 exit 0

@@ -2,13 +2,13 @@ package system
 
 import (
 	"context"
-	"os"
 	"path/filepath"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/gandalfmagic/liveness-wrapper/pkg/logger"
+	"github.com/gandalfmagic/liveness-wrapper/pkg/testconsole"
 )
 
 var testDirectory = "../../test/system"
@@ -105,6 +105,7 @@ func Test_wrapperHandler_canRestart(t *testing.T) {
 			want:   false,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &wrapperHandler{
@@ -132,16 +133,23 @@ func Test_wrapperHandler_do(t *testing.T) {
 		path         string
 		restart      WrapperRestartMode
 	}
+
+	type waitFor struct {
+		afterStart string
+	}
+
 	type want struct {
 		statusBeforeStart WrapperStatus
 		statusAfterStart  WrapperStatus
 		statusAfterDone   WrapperStatus
 		wantErr           bool
 	}
+
 	tests := []struct {
-		name   string
-		fields fields
-		want   want
+		name    string
+		fields  fields
+		waitFor waitFor
+		want    want
 	}{
 		{
 			name: "Command_not_found_error",
@@ -153,22 +161,8 @@ func Test_wrapperHandler_do(t *testing.T) {
 				path:         filepath.Join(testDirectory, "command_not_found.sh"),
 				restart:      WrapperRestartNever,
 			},
-			want: want{
-				statusBeforeStart: WrapperStatusStopped,
-				statusAfterStart:  WrapperStatusError,
-				statusAfterDone:   WrapperStatusError,
-				wantErr:           true,
-			},
-		},
-		{
-			name: "Permission_denied_error",
-			fields: fields{
-				arg:          []string{},
-				failOnStdErr: false,
-				hideStdErr:   false,
-				hideStdOut:   false,
-				path:         filepath.Join(testDirectory, "no_permissions.sh"),
-				restart:      WrapperRestartNever,
+			waitFor: waitFor{
+				afterStart: "no such file or directory",
 			},
 			want: want{
 				statusBeforeStart: WrapperStatusStopped,
@@ -187,6 +181,9 @@ func Test_wrapperHandler_do(t *testing.T) {
 				path:         filepath.Join(testDirectory, "test_int_no_err.sh"),
 				restart:      WrapperRestartNever,
 			},
+			waitFor: waitFor{
+				afterStart: "wrapped log: 10ms",
+			},
 			want: want{
 				statusBeforeStart: WrapperStatusStopped,
 				statusAfterStart:  WrapperStatusRunning,
@@ -204,6 +201,9 @@ func Test_wrapperHandler_do(t *testing.T) {
 				path:         filepath.Join(testDirectory, "error_10_int_no_err.sh"),
 				restart:      WrapperRestartNever,
 			},
+			waitFor: waitFor{
+				afterStart: "wrapped log: 10ms",
+			},
 			want: want{
 				statusBeforeStart: WrapperStatusStopped,
 				statusAfterStart:  WrapperStatusRunning,
@@ -212,8 +212,12 @@ func Test_wrapperHandler_do(t *testing.T) {
 			},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			console := testconsole.NewTestConsole()
+			logger.New(console, "", "INFO")
+
 			p := &wrapperHandler{
 				arg:          tt.fields.arg,
 				failOnStdErr: tt.fields.failOnStdErr,
@@ -258,8 +262,10 @@ func Test_wrapperHandler_do(t *testing.T) {
 			// start the process
 			go p.do(ctx, chanWrapperData, chanWrapperDone)
 
-			// wait to ensure the process is running
-			time.Sleep(10 * time.Millisecond)
+			ch := console.WaitForText(tt.waitFor.afterStart, 1*time.Second)
+			if err := <-ch; err != nil {
+				t.Fatal(err)
+			}
 
 			mux.Lock()
 			if wrapperStatus != tt.want.statusAfterStart {
@@ -270,8 +276,6 @@ func Test_wrapperHandler_do(t *testing.T) {
 			<-done
 			<-chanWrapperDone
 
-			// wait 10ms after the process stopped signal
-			time.Sleep(10 * time.Millisecond)
 			mux.Lock()
 			if tt.want.statusAfterDone != wrapperStatus {
 				t.Errorf("after stop: expected wrapperStatus == %v, got %v", tt.want.statusAfterDone, wrapperStatus)
@@ -308,6 +312,11 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 		exitImmediately bool
 	}
 
+	type waitFor struct {
+		afterStart  string
+		afterCancel string
+	}
+
 	type want struct {
 		statusBeforeStart WrapperStatus
 		statusAfterStart  WrapperStatus
@@ -317,10 +326,11 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 	}
 
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   want
+		name    string
+		fields  fields
+		args    args
+		waitFor waitFor
+		want    want
 	}{
 		{
 			name: "Simple_run_exit_ok",
@@ -335,6 +345,10 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 			},
 			args: args{
 				exitImmediately: false,
+			},
+			waitFor: waitFor{
+				afterStart:  "wrapped log: 10ms",
+				afterCancel: "wrapped log: EXIT 100ms",
 			},
 			want: want{
 				statusBeforeStart: WrapperStatusStopped,
@@ -358,6 +372,9 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 			args: args{
 				exitImmediately: true,
 			},
+			waitFor: waitFor{
+				afterStart: "wrapped log: 10ms",
+			},
 			want: want{
 				statusBeforeStart: WrapperStatusStopped,
 				statusAfterStart:  WrapperStatusRunning,
@@ -379,6 +396,10 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 			},
 			args: args{
 				exitImmediately: false,
+			},
+			waitFor: waitFor{
+				afterStart:  "wrapped log: 10ms",
+				afterCancel: "wrapped log: EXIT 100ms",
 			},
 			want: want{
 				statusBeforeStart: WrapperStatusStopped,
@@ -402,6 +423,10 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 			args: args{
 				exitImmediately: false,
 			},
+			waitFor: waitFor{
+				afterStart:  "wrapped log: 10ms",
+				afterCancel: "wrapped log: EXIT 100ms",
+			},
 			want: want{
 				statusBeforeStart: WrapperStatusStopped,
 				statusAfterStart:  WrapperStatusRunning,
@@ -423,6 +448,9 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 			},
 			args: args{
 				exitImmediately: true,
+			},
+			waitFor: waitFor{
+				afterStart: "wrapped log: 10ms",
 			},
 			want: want{
 				statusBeforeStart: WrapperStatusStopped,
@@ -446,6 +474,10 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 			args: args{
 				exitImmediately: false,
 			},
+			waitFor: waitFor{
+				afterStart:  "wrapped log: 10ms",
+				afterCancel: "wrapped log: EXIT 100ms",
+			},
 			want: want{
 				statusBeforeStart: WrapperStatusStopped,
 				statusAfterStart:  WrapperStatusRunning,
@@ -458,6 +490,9 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			console := testconsole.NewTestConsole()
+			logger.New(console, "", "INFO")
+
 			p := &wrapperHandler{
 				arg:          tt.fields.arg,
 				failOnStdErr: tt.fields.failOnStdErr,
@@ -504,7 +539,10 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 			go p.do(ctx, chanWrapperData, chanWrapperDone)
 
 			// wait to ensure the process is running
-			time.Sleep(10 * time.Millisecond)
+			ch := console.WaitForText(tt.waitFor.afterStart, 1*time.Second)
+			if err := <-ch; err != nil {
+				t.Fatal(err)
+			}
 
 			mux.Lock()
 			if tt.want.statusAfterStart != wrapperStatus {
@@ -515,8 +553,11 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 			cancel()
 
 			if !tt.args.exitImmediately {
-				// wait to 20ms
-				time.Sleep(20 * time.Millisecond)
+				// wait to ensure the process is running
+				ch := console.WaitForText(tt.waitFor.afterCancel, 1*time.Second)
+				if err := <-ch; err != nil {
+					t.Fatal(err)
+				}
 
 				mux.Lock()
 				if tt.want.statusAfterCancel != wrapperStatus {
@@ -528,8 +569,6 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 			<-done
 			<-chanWrapperDone
 
-			// wait 10ms after the process stopped signal
-			time.Sleep(10 * time.Millisecond)
 			mux.Lock()
 			if tt.want.statusAfterDone != wrapperStatus {
 				t.Errorf("after stop: expected wrapperStatus == %v, got %v", tt.want.statusAfterDone, wrapperStatus)
@@ -561,27 +600,34 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 		restart      WrapperRestartMode
 		timeout      time.Duration
 	}
+
 	type args struct {
 		cancelWhileRunning bool
 		checkTimeout       bool
-		exitImmediately    bool
-		timeToExit         time.Duration
-		timeToRestart      time.Duration
 	}
+
+	type waitFor struct {
+		afterStart     string
+		afterFirstExit string
+		afterRestart   string
+		afterCancel    string
+	}
+
 	type want struct {
 		statusAfterStart     WrapperStatus
 		statusAfterFirstExit WrapperStatus
 		statusAfterRestart   WrapperStatus
-		statusAfterCancel    WrapperStatus
 		statusAfterDone      WrapperStatus
 		statusError          int
 		wantErr              bool
 	}
+
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   want
+		name    string
+		fields  fields
+		args    args
+		waitFor waitFor
+		want    want
 	}{
 		{
 			name: "On_error_Cancel_while_IS_running",
@@ -596,14 +642,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         240 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped process exited with status: 10",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "wrapped log: EXIT 10ms",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusStopped,
 				wantErr:              false,
 			},
@@ -621,14 +670,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         240 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped process exited with status: 10",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "wrapped log: EXIT 10ms",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          131,
 				wantErr:              true,
@@ -647,14 +699,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         240 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped process exited with status: 10",
+				afterRestart:   "",
+				afterCancel:    "",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          10,
 				wantErr:              true,
@@ -673,14 +728,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         240 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped process exited with status: 10",
+				afterRestart:   "",
+				afterCancel:    "",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          10,
 				wantErr:              true,
@@ -699,15 +757,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
-				exitImmediately:    true,
-				timeToExit:         130 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped process exited with status",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "wrapped log: INT SIGNAL",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusStopped,
 				wantErr:              false,
 			},
@@ -725,15 +785,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
-				exitImmediately:    true,
-				timeToExit:         130 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped process exited with status: 10",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "wrapped log: INT SIGNAL",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          131,
 				wantErr:              true,
@@ -752,15 +814,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
-				exitImmediately:    true,
-				timeToExit:         130 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped process exited with status",
+				afterRestart:   "",
+				afterCancel:    "",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          10,
 				wantErr:              true,
@@ -779,15 +843,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
-				exitImmediately:    true,
-				timeToExit:         130 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped process exited with status",
+				afterRestart:   "",
+				afterCancel:    "",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          10,
 				wantErr:              true,
@@ -806,14 +872,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         240 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped process exited with status",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "wrapped log: EXIT 10ms",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusStopped,
 				wantErr:              false,
 			},
@@ -831,14 +900,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         240 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped process exited with status",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "wrapped log: EXIT 10ms",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          131,
 				wantErr:              true,
@@ -857,14 +929,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         240 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped process exited with status",
+				afterRestart:   "",
+				afterCancel:    "",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          10,
 				wantErr:              true,
@@ -883,14 +958,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         240 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped process exited with status",
+				afterRestart:   "",
+				afterCancel:    "",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          10,
 				wantErr:              true,
@@ -909,15 +987,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
-				exitImmediately:    true,
-				timeToExit:         130 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped process exited with status",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "wrapped log: INT SIGNAL",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusStopped,
 				wantErr:              false,
 			},
@@ -935,15 +1015,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
-				exitImmediately:    true,
-				timeToExit:         130 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped process exited with status",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "wrapped log: INT SIGNAL",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          131,
 				wantErr:              true,
@@ -962,15 +1044,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
-				exitImmediately:    true,
-				timeToExit:         130 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped process exited with status",
+				afterRestart:   "",
+				afterCancel:    "",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          10,
 				wantErr:              true,
@@ -989,15 +1073,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
-				exitImmediately:    true,
-				timeToExit:         130 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped process exited with status",
+				afterRestart:   "",
+				afterCancel:    "",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          10,
 				wantErr:              true,
@@ -1016,14 +1102,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         240 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped log: EXIT 100ms",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "wrapped log: EXIT 10ms",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusStopped,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusStopped,
 				wantErr:              false,
 			},
@@ -1041,14 +1130,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
-				timeToExit:         240 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped log: EXIT 100ms",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "wrapped log: EXIT 10ms",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusStopped,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          131,
 				wantErr:              true,
@@ -1067,14 +1159,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         240 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped log: EXIT 100ms",
+				afterRestart:   "",
+				afterCancel:    "",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusStopped,
 				statusAfterRestart:   WrapperStatusStopped,
-				statusAfterCancel:    WrapperStatusStopped,
 				statusAfterDone:      WrapperStatusStopped,
 				wantErr:              false,
 			},
@@ -1092,14 +1187,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
-				timeToExit:         240 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped log: EXIT 100ms",
+				afterRestart:   "",
+				afterCancel:    "",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusStopped,
 				statusAfterRestart:   WrapperStatusStopped,
-				statusAfterCancel:    WrapperStatusStopped,
 				statusAfterDone:      WrapperStatusStopped,
 				wantErr:              false,
 			},
@@ -1117,15 +1215,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
-				exitImmediately:    true,
-				timeToExit:         130 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped log: 100ms",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "wrapped log: INT SIGNAL",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusStopped,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusStopped,
 				wantErr:              false,
 			},
@@ -1143,15 +1243,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
-				exitImmediately:    true,
-				timeToExit:         130 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped log: 100ms",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "wrapped log: INT SIGNAL",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusStopped,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          131,
 				wantErr:              true,
@@ -1170,15 +1272,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
-				exitImmediately:    true,
-				timeToExit:         130 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped log: 100ms",
+				afterRestart:   "",
+				afterCancel:    "",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusStopped,
 				statusAfterRestart:   WrapperStatusStopped,
-				statusAfterCancel:    WrapperStatusStopped,
 				statusAfterDone:      WrapperStatusStopped,
 				wantErr:              false,
 			},
@@ -1196,15 +1300,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: false,
-				exitImmediately:    true,
-				timeToExit:         130 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped log: 100ms",
+				afterRestart:   "",
+				afterCancel:    "",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusStopped,
 				statusAfterRestart:   WrapperStatusStopped,
-				statusAfterCancel:    WrapperStatusStopped,
 				statusAfterDone:      WrapperStatusStopped,
 				wantErr:              false,
 			},
@@ -1223,14 +1329,17 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			args: args{
 				cancelWhileRunning: true,
 				checkTimeout:       true,
-				timeToExit:         240 * time.Millisecond,
-				timeToRestart:      50 * time.Millisecond,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterFirstExit: "wrapped log: EXIT 100ms",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "wrapped log: INT SIGNAL",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusStopped,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          255,
 				wantErr:              true,
@@ -1239,6 +1348,8 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			console := testconsole.NewTestConsole()
+			logger.New(console, "", "INFO")
 
 			p := &wrapperHandler{
 				arg:             tt.fields.arg,
@@ -1286,8 +1397,10 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			// start the process
 			go p.do(ctx, chanWrapperData, chanWrapperDone)
 
-			// wait to ensure the process is running
-			time.Sleep(10 * time.Millisecond)
+			ch := console.WaitForText(tt.waitFor.afterStart, 1*time.Second)
+			if err := <-ch; err != nil {
+				t.Fatal(err)
+			}
 
 			mux.Lock()
 			if wrapperStatus != tt.want.statusAfterStart {
@@ -1295,8 +1408,13 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			}
 			mux.Unlock()
 
-			// wait for the process exit for the first time
-			time.Sleep(tt.args.timeToExit)
+			ch = console.WaitForText(tt.waitFor.afterFirstExit, 1*time.Second)
+			if err := <-ch; err != nil {
+				t.Fatal(err)
+			}
+			if tt.waitFor.afterFirstExit != "" {
+				time.Sleep(150 * time.Microsecond)
+			}
 
 			mux.Lock()
 			if wrapperStatus != tt.want.statusAfterFirstExit {
@@ -1305,8 +1423,10 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			mux.Unlock()
 
 			if tt.args.cancelWhileRunning {
-				// wait for the process to restart
-				time.Sleep(tt.args.timeToRestart)
+				ch = console.WaitForText(tt.waitFor.afterRestart, 1*time.Second)
+				if err := <-ch; err != nil {
+					t.Fatal(err)
+				}
 
 				mux.Lock()
 				if wrapperStatus != tt.want.statusAfterRestart {
@@ -1318,36 +1438,26 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			// cancel the context to terminate the process
 			cancel()
 
-			if !tt.args.exitImmediately {
-				time.Sleep(20 * time.Millisecond)
-
-				mux.Lock()
-				if wrapperStatus != tt.want.statusAfterCancel {
-					t.Errorf("after cancel: expected wrapperStatus == %v, got %v", tt.want.statusAfterCancel, wrapperStatus)
-				}
-				mux.Unlock()
+			ch = console.WaitForText(tt.waitFor.afterCancel, 1*time.Second)
+			if err := <-ch; err != nil {
+				t.Fatal(err)
 			}
 
 			var timeoutStart time.Time
 			if tt.args.checkTimeout {
-				time.Sleep(1 * time.Millisecond) // GitHub hack, not needed
 				timeoutStart = time.Now()
 			}
 
 			<-done
 			<-chanWrapperDone
 
-			var timeoutDuration time.Duration
 			if tt.args.checkTimeout {
-				timeoutDuration = time.Since(timeoutStart)
+				timeoutDuration := time.Since(timeoutStart)
 
-				if timeoutDuration > tt.fields.timeout {
+				if timeoutDuration > tt.fields.timeout+(30*time.Millisecond) {
 					t.Errorf("after timeout: expected timeout == %v, got %v", tt.fields.timeout, timeoutDuration)
 				}
 			}
-
-			// wait 1ms
-			time.Sleep(1 * time.Millisecond)
 
 			mux.Lock()
 			if wrapperStatus != tt.want.statusAfterDone {
@@ -1388,18 +1498,30 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 		restart      WrapperRestartMode
 		timeout      time.Duration
 	}
+
 	type args struct {
 		cancelWhileRunning bool
 	}
+
+	type waitFor struct {
+		afterStart     string
+		afterError     string
+		afterFirstExit string
+		afterRestart   string
+		afterCancel    string
+	}
+
 	type want struct {
 		statusAfterFirstExit WrapperStatus
 		err                  bool
 	}
+
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   want
+		name    string
+		fields  fields
+		args    args
+		waitFor waitFor
+		want    want
 	}{
 		{
 			name: "Restart_on_error_Cancel_while_IS_running",
@@ -1414,6 +1536,13 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterError:     "wrapped log: write a line to stderr",
+				afterFirstExit: "wrapped process exited with status: 10",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "wrapped log: INT SIGNAL",
 			},
 			want: want{
 				statusAfterFirstExit: WrapperStatusError,
@@ -1434,6 +1563,13 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			args: args{
 				cancelWhileRunning: false,
 			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterError:     "wrapped log: write a line to stderr",
+				afterFirstExit: "wrapped process exited with status: 10",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "",
+			},
 			want: want{
 				statusAfterFirstExit: WrapperStatusError,
 				err:                  true,
@@ -1452,6 +1588,13 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			},
 			args: args{
 				cancelWhileRunning: true,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterError:     "wrapped log: write a line to stderr",
+				afterFirstExit: "wrapped process exited with status: 10",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "wrapped log: INT SIGNAL",
 			},
 			want: want{
 				statusAfterFirstExit: WrapperStatusError,
@@ -1472,6 +1615,13 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			args: args{
 				cancelWhileRunning: false,
 			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterError:     "wrapped log: write a line to stderr",
+				afterFirstExit: "wrapped process exited with status: 10",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "",
+			},
 			want: want{
 				statusAfterFirstExit: WrapperStatusError,
 				err:                  true,
@@ -1491,8 +1641,15 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			args: args{
 				cancelWhileRunning: true,
 			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterError:     "wrapped log: write a line to stderr",
+				afterFirstExit: "wrapped log: 100ms",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "wrapped log: INT SIGNAL",
+			},
 			want: want{
-				statusAfterFirstExit: WrapperStatusStopped,
+				statusAfterFirstExit: WrapperStatusError,
 				err:                  false,
 			},
 		},
@@ -1510,16 +1667,24 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			args: args{
 				cancelWhileRunning: false,
 			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterError:     "wrapped log: write a line to stderr",
+				afterFirstExit: "wrapped log: 100ms",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "",
+			},
 			want: want{
-				statusAfterFirstExit: WrapperStatusStopped,
+				statusAfterFirstExit: WrapperStatusError,
 				err:                  false,
 			},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
-			logger.Configure(os.Stdout, "test", "ERROR")
+			console := testconsole.NewTestConsole()
+			logger.New(console, "test", "INFO")
 
 			// create the context
 			ctx, cancel := context.WithCancel(context.Background())
@@ -1567,8 +1732,10 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			// start the process
 			go p.do(ctx, chanWrapperData, chanWrapperDone)
 
-			// wait to ensure the process is running
-			time.Sleep(10 * time.Millisecond)
+			ch := console.WaitForText(tt.waitFor.afterStart, 1*time.Second)
+			if err := <-ch; err != nil {
+				t.Fatal(err)
+			}
 
 			mux.Lock()
 			if wrapperStatus != WrapperStatusRunning {
@@ -1576,8 +1743,13 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			}
 			mux.Unlock()
 
-			// wait for the process wantErr log
-			time.Sleep(130 * time.Millisecond)
+			ch = console.WaitForText(tt.waitFor.afterError, 1*time.Second)
+			if err := <-ch; err != nil {
+				t.Fatal(err)
+			}
+			if tt.waitFor.afterError != "" {
+				time.Sleep(1 * time.Millisecond)
+			}
 
 			mux.Lock()
 			if wrapperStatus != WrapperStatusError {
@@ -1585,8 +1757,10 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			}
 			mux.Unlock()
 
-			// wait for the process to exit the first time
-			time.Sleep(110 * time.Millisecond)
+			ch = console.WaitForText(tt.waitFor.afterFirstExit, 1*time.Second)
+			if err := <-ch; err != nil {
+				t.Fatal(err)
+			}
 
 			mux.Lock()
 			if wrapperStatus != tt.want.statusAfterFirstExit {
@@ -1595,8 +1769,10 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			mux.Unlock()
 
 			if tt.args.cancelWhileRunning {
-				// wait for the process to restart
-				time.Sleep(60 * time.Millisecond)
+				ch = console.WaitForText(tt.waitFor.afterRestart, 1*time.Second)
+				if err := <-ch; err != nil {
+					t.Fatal(err)
+				}
 
 				mux.Lock()
 				if wrapperStatus != WrapperStatusRunning {
@@ -1607,6 +1783,11 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 
 			// cancel the context to terminate the process
 			cancel()
+
+			ch = console.WaitForText(tt.waitFor.afterCancel, 1*time.Second)
+			if err := <-ch; err != nil {
+				t.Fatal(err)
+			}
 
 			<-done
 			<-chanWrapperDone
