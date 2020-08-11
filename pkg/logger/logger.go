@@ -10,7 +10,7 @@ import (
 	"github.com/jcelliott/lumber"
 )
 
-const DefaultLogLevel = "ERROR"
+const DefaultLogLevel = "INFO"
 
 var mux sync.Mutex
 var defaultLogger *lumber.ConsoleLogger
@@ -107,9 +107,29 @@ func Configure(out io.WriteCloser, prefix, level string) {
 	defaultLogger.TimeFormat("2006-01-02T15:04:05-0700")
 }
 
+func New(out io.WriteCloser, prefix, level string) {
+	mux.Lock()
+	defer mux.Unlock()
+
+	// convert the log level
+	logLvl := lumber.LvlInt(level)
+
+	defaultLogger = lumber.NewBasicLogger(out, logLvl)
+
+	if prefix != "" {
+		defaultLogger.Prefix("[" + prefix + "]")
+	} else {
+		defaultLogger.Prefix("")
+	}
+
+	defaultLogger.TimeFormat("2006-01-02T15:04:05-0700")
+}
+
 func getLogger() *lumber.ConsoleLogger {
 	if defaultLogger == nil {
-		defaultLogger = lumber.NewConsoleLogger(lumber.INFO)
+		defaultLogger = lumber.NewBasicLogger(os.Stdout, lumber.INFO)
+		defaultLogger.TimeFormat("2006-01-02T15:04:05-0700")
+
 		return defaultLogger
 	}
 

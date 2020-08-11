@@ -13,6 +13,8 @@ import (
 
 	myHttp "github.com/gandalfmagic/liveness-wrapper/internal/http"
 	"github.com/gandalfmagic/liveness-wrapper/internal/system"
+	"github.com/gandalfmagic/liveness-wrapper/pkg/logger"
+	"github.com/gandalfmagic/liveness-wrapper/pkg/testconsole"
 )
 
 var testDirectory = "../test"
@@ -125,6 +127,9 @@ func Test_getRestartMode(t *testing.T) {
 }
 
 func Test_runner_wait(t *testing.T) {
+	console := testconsole.NewTestConsole()
+	logger.New(console, "test", "INFO")
+
 	t.Run("Exit_without_error", func(t *testing.T) {
 		ctx, cancelServer := context.WithCancel(context.Background())
 
@@ -156,8 +161,10 @@ func Test_runner_wait(t *testing.T) {
 			chanErr <- r.wait(cancelWrapper, cancelServer, c)
 		}()
 
-		// wait for the process to start
-		time.Sleep(20 * time.Millisecond)
+		ch := console.WaitForText("wrapped log: 10ms", 1*time.Second)
+		if err := <-ch; err != nil {
+			t.Fatal(err)
+		}
 
 		// testing the endpoints
 		var rsp *http.Response
@@ -208,8 +215,10 @@ func Test_runner_wait(t *testing.T) {
 			chanErr <- r.wait(cancelFuncProcess, cancelFuncHttp, c)
 		}()
 
-		// wait for the process to start
-		time.Sleep(20 * time.Millisecond)
+		ch := console.WaitForText("wrapped log: 10ms", 1*time.Second)
+		if err := <-ch; err != nil {
+			t.Fatal(err)
+		}
 
 		// testing the endpoints
 		var rsp *http.Response
@@ -261,8 +270,10 @@ func Test_runner_wait(t *testing.T) {
 			chanErr <- r.wait(cancelWrapper, cancelServer, c)
 		}()
 
-		// wait for the process to start
-		time.Sleep(20 * time.Millisecond)
+		ch := console.WaitForText("wrapped log: 10ms", 1*time.Second)
+		if err := <-ch; err != nil {
+			t.Fatal(err)
+		}
 
 		// testing the endpoints
 		var rsp *http.Response
@@ -280,7 +291,10 @@ func Test_runner_wait(t *testing.T) {
 		// send CTRL-C
 		c <- os.Interrupt
 
-		time.Sleep(10 * time.Millisecond)
+		ch = console.WaitForText("wrapped log: INT SIGNAL", 1*time.Second)
+		if err := <-ch; err != nil {
+			t.Fatal(err)
+		}
 
 		// test alive endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/alive")
@@ -337,8 +351,10 @@ func Test_runner_wait(t *testing.T) {
 			chanErr <- r.wait(cancelWrapper, cancelServer, c)
 		}()
 
-		// wait for the process to start
-		time.Sleep(10 * time.Millisecond)
+		ch := console.WaitForText("wrapped log: 10ms", 1*time.Second)
+		if err := <-ch; err != nil {
+			t.Fatal(err)
+		}
 
 		var rsp *http.Response
 
@@ -354,8 +370,10 @@ func Test_runner_wait(t *testing.T) {
 			t.Errorf("Expected status code 200 on /alive, got %v", rsp.StatusCode)
 		}
 
-		// wait for the process to terminate with error
-		time.Sleep(260 * time.Millisecond) // 100ms normal execution + 100ms after exit
+		ch = console.WaitForText("wrapped process exited with status: 10", 1*time.Second)
+		if err := <-ch; err != nil {
+			t.Fatal(err)
+		}
 
 		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
@@ -410,8 +428,10 @@ func Test_runner_wait(t *testing.T) {
 			chanErr <- r.wait(cancelFuncProcess, cancelFuncHttp, c)
 		}()
 
-		// wait for the process to start
-		time.Sleep(20 * time.Millisecond)
+		ch := console.WaitForText("wrapped log: 10ms", 1*time.Second)
+		if err := <-ch; err != nil {
+			t.Fatal(err)
+		}
 
 		var rsp *http.Response
 
@@ -427,8 +447,10 @@ func Test_runner_wait(t *testing.T) {
 			t.Errorf("after start: expected status code 200 on /alive, got %v", rsp.StatusCode)
 		}
 
-		// wait for the process to terminate with error
-		time.Sleep(260 * time.Millisecond)
+		ch = console.WaitForText("wrapped process exited with status: 10", 1*time.Second)
+		if err := <-ch; err != nil {
+			t.Fatal(err)
+		}
 
 		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
@@ -442,8 +464,10 @@ func Test_runner_wait(t *testing.T) {
 			t.Errorf("after exit: expected status code 503 on /alive, got %v", rsp.StatusCode)
 		}
 
-		// wait for the process to restart
-		time.Sleep(1000 * time.Millisecond)
+		ch = console.WaitForText("wrapped log: 10ms", 2*time.Second)
+		if err := <-ch; err != nil {
+			t.Fatal(err)
+		}
 
 		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
@@ -460,8 +484,10 @@ func Test_runner_wait(t *testing.T) {
 		// send CTRL-C while the process is running
 		c <- os.Interrupt
 
-		// wait for the process to restart
-		time.Sleep(10 * time.Millisecond)
+		ch = console.WaitForText("wrapped log: EXIT 10ms", 1*time.Second)
+		if err := <-ch; err != nil {
+			t.Fatal(err)
+		}
 
 		// testing ready endpoint
 		rsp, _ = http.Get("http://127.0.0.1:6060/ready")
@@ -518,8 +544,10 @@ func Test_runner_wait(t *testing.T) {
 			chanErr <- r.wait(cancelFuncProcess, cancelFuncHttp, c)
 		}()
 
-		// wait for the process to start
-		time.Sleep(10 * time.Millisecond)
+		ch := console.WaitForText("wrapped log: 10ms", 2*time.Second)
+		if err := <-ch; err != nil {
+			t.Fatal(err)
+		}
 
 		var rsp *http.Response
 
