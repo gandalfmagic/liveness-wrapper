@@ -1489,7 +1489,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			if tt.args.checkTimeout {
 				timeoutDuration := time.Since(timeoutStart)
 
-				if timeoutDuration > tt.fields.timeout {
+				if timeoutDuration > tt.fields.timeout+(30*time.Millisecond) {
 					t.Errorf("after timeout: expected timeout == %v, got %v", tt.fields.timeout, timeoutDuration)
 				}
 			}
@@ -1717,7 +1717,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			},
 			want: want{
 				statusAfterFirstExit: WrapperStatusError,
-				statusAfterCancel:    WrapperStatusStopped,
+				statusAfterCancel:    WrapperStatusError,
 				err:                  false,
 			},
 		},
