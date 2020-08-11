@@ -172,26 +172,6 @@ func Test_wrapperHandler_do(t *testing.T) {
 			},
 		},
 		{
-			name: "Permission_denied_error",
-			fields: fields{
-				arg:          []string{},
-				failOnStdErr: false,
-				hideStdErr:   false,
-				hideStdOut:   false,
-				path:         filepath.Join(testDirectory, "no_permissions.sh"),
-				restart:      WrapperRestartNever,
-			},
-			waitFor: waitFor{
-				afterStart: "permission denied",
-			},
-			want: want{
-				statusBeforeStart: WrapperStatusStopped,
-				statusAfterStart:  WrapperStatusError,
-				statusAfterDone:   WrapperStatusError,
-				wantErr:           true,
-			},
-		},
-		{
 			name: "Simple_run",
 			fields: fields{
 				arg:          []string{},
@@ -1459,7 +1439,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				t.Fatal(err)
 			}
 			if tt.waitFor.afterFirstExit != "" {
-				time.Sleep(1 * time.Millisecond)
+				time.Sleep(150 * time.Microsecond)
 			}
 
 			mux.Lock()
@@ -1487,6 +1467,9 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			ch = console.WaitForText(tt.waitFor.afterCancel, 1*time.Second)
 			if err := <-ch; err != nil {
 				t.Fatal(err)
+			}
+			if tt.waitFor.afterFirstExit != "" {
+				time.Sleep(1 * time.Microsecond)
 			}
 
 			mux.Lock()
@@ -1706,7 +1689,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 				afterCancel:    "wrapped log: INT SIGNAL",
 			},
 			want: want{
-				statusAfterFirstExit: WrapperStatusStopped,
+				statusAfterFirstExit: WrapperStatusError,
 				statusAfterCancel:    WrapperStatusRunning,
 				err:                  false,
 			},
@@ -1733,8 +1716,8 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 				afterCancel:    "",
 			},
 			want: want{
-				statusAfterFirstExit: WrapperStatusStopped,
-				statusAfterCancel:    WrapperStatusStopped,
+				statusAfterFirstExit: WrapperStatusError,
+				statusAfterCancel:    WrapperStatusError,
 				err:                  false,
 			},
 		},
@@ -1821,7 +1804,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 				t.Fatal(err)
 			}
 			if tt.waitFor.afterFirstExit != "" {
-				time.Sleep(1 * time.Millisecond)
+				time.Sleep(50 * time.Microsecond)
 			}
 
 			mux.Lock()
