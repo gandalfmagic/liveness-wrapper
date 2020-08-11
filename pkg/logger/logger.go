@@ -103,6 +103,7 @@ func Configure(out io.WriteCloser, prefix, level string) {
 	} else {
 		defaultLogger.Prefix("")
 	}
+
 	defaultLogger.TimeFormat("2006-01-02T15:04:05-0700")
 }
 

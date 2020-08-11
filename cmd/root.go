@@ -29,7 +29,7 @@ var (
 	config      string // config file location
 	showVersion bool   // whether to print version info or not
 
-	// to be populated by linker
+	// to be populated by linker.
 	version = "v0.0.0"
 	commit  = "HEAD"
 
