@@ -617,7 +617,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 		statusAfterStart     WrapperStatus
 		statusAfterFirstExit WrapperStatus
 		statusAfterRestart   WrapperStatus
-		statusAfterCancel    WrapperStatus
 		statusAfterDone      WrapperStatus
 		statusError          int
 		wantErr              bool
@@ -654,7 +653,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusStopped,
 				wantErr:              false,
 			},
@@ -683,7 +681,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          131,
 				wantErr:              true,
@@ -713,7 +710,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          10,
 				wantErr:              true,
@@ -743,7 +739,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          10,
 				wantErr:              true,
@@ -773,7 +768,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusStopped,
 				wantErr:              false,
 			},
@@ -802,7 +796,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          131,
 				wantErr:              true,
@@ -832,7 +825,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          10,
 				wantErr:              true,
@@ -862,7 +854,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          10,
 				wantErr:              true,
@@ -892,7 +883,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusStopped,
 				wantErr:              false,
 			},
@@ -921,7 +911,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          131,
 				wantErr:              true,
@@ -951,7 +940,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          10,
 				wantErr:              true,
@@ -981,7 +969,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          10,
 				wantErr:              true,
@@ -1011,7 +998,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusStopped,
 				wantErr:              false,
 			},
@@ -1040,7 +1026,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          131,
 				wantErr:              true,
@@ -1070,7 +1055,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          10,
 				wantErr:              true,
@@ -1100,7 +1084,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusError,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusError,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          10,
 				wantErr:              true,
@@ -1130,7 +1113,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusStopped,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusStopped,
 				wantErr:              false,
 			},
@@ -1159,7 +1141,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusStopped,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          131,
 				wantErr:              true,
@@ -1189,7 +1170,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusStopped,
 				statusAfterRestart:   WrapperStatusStopped,
-				statusAfterCancel:    WrapperStatusStopped,
 				statusAfterDone:      WrapperStatusStopped,
 				wantErr:              false,
 			},
@@ -1218,7 +1198,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusStopped,
 				statusAfterRestart:   WrapperStatusStopped,
-				statusAfterCancel:    WrapperStatusStopped,
 				statusAfterDone:      WrapperStatusStopped,
 				wantErr:              false,
 			},
@@ -1247,7 +1226,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusStopped,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusStopped,
 				wantErr:              false,
 			},
@@ -1276,7 +1254,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusStopped,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          131,
 				wantErr:              true,
@@ -1306,7 +1283,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusStopped,
 				statusAfterRestart:   WrapperStatusStopped,
-				statusAfterCancel:    WrapperStatusStopped,
 				statusAfterDone:      WrapperStatusStopped,
 				wantErr:              false,
 			},
@@ -1335,7 +1311,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusStopped,
 				statusAfterRestart:   WrapperStatusStopped,
-				statusAfterCancel:    WrapperStatusStopped,
 				statusAfterDone:      WrapperStatusStopped,
 				wantErr:              false,
 			},
@@ -1365,7 +1340,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				statusAfterStart:     WrapperStatusRunning,
 				statusAfterFirstExit: WrapperStatusStopped,
 				statusAfterRestart:   WrapperStatusRunning,
-				statusAfterCancel:    WrapperStatusRunning,
 				statusAfterDone:      WrapperStatusError,
 				statusError:          255,
 				wantErr:              true,
@@ -1468,15 +1442,6 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 			if err := <-ch; err != nil {
 				t.Fatal(err)
 			}
-			if tt.waitFor.afterFirstExit != "" {
-				time.Sleep(1 * time.Microsecond)
-			}
-
-			mux.Lock()
-			if wrapperStatus != tt.want.statusAfterCancel {
-				t.Errorf("after cancel: expected wrapperStatus == %v, got %v", tt.want.statusAfterCancel, wrapperStatus)
-			}
-			mux.Unlock()
 
 			var timeoutStart time.Time
 			if tt.args.checkTimeout {
@@ -1548,7 +1513,6 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 
 	type want struct {
 		statusAfterFirstExit WrapperStatus
-		statusAfterCancel    WrapperStatus
 		err                  bool
 	}
 
@@ -1582,7 +1546,6 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			},
 			want: want{
 				statusAfterFirstExit: WrapperStatusError,
-				statusAfterCancel:    WrapperStatusRunning,
 				err:                  true,
 			},
 		},
@@ -1609,7 +1572,6 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			},
 			want: want{
 				statusAfterFirstExit: WrapperStatusError,
-				statusAfterCancel:    WrapperStatusError,
 				err:                  true,
 			},
 		},
@@ -1636,7 +1598,6 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			},
 			want: want{
 				statusAfterFirstExit: WrapperStatusError,
-				statusAfterCancel:    WrapperStatusRunning,
 				err:                  true,
 			},
 		},
@@ -1663,7 +1624,6 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			},
 			want: want{
 				statusAfterFirstExit: WrapperStatusError,
-				statusAfterCancel:    WrapperStatusError,
 				err:                  true,
 			},
 		},
@@ -1690,7 +1650,6 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			},
 			want: want{
 				statusAfterFirstExit: WrapperStatusError,
-				statusAfterCancel:    WrapperStatusRunning,
 				err:                  false,
 			},
 		},
@@ -1717,7 +1676,6 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			},
 			want: want{
 				statusAfterFirstExit: WrapperStatusError,
-				statusAfterCancel:    WrapperStatusError,
 				err:                  false,
 			},
 		},
@@ -1833,12 +1791,6 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			if err := <-ch; err != nil {
 				t.Fatal(err)
 			}
-
-			mux.Lock()
-			if wrapperStatus != tt.want.statusAfterCancel {
-				t.Errorf("after cancel: expected wrapperStatus == %v, got %v", tt.want.statusAfterCancel, wrapperStatus)
-			}
-			mux.Unlock()
 
 			<-done
 			<-chanWrapperDone
