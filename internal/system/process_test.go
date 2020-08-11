@@ -1413,7 +1413,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				t.Fatal(err)
 			}
 			if tt.waitFor.afterFirstExit != "" {
-				time.Sleep(200 * time.Microsecond)
+				time.Sleep(150 * time.Microsecond)
 			}
 
 			mux.Lock()
@@ -1760,9 +1760,6 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			ch = console.WaitForText(tt.waitFor.afterFirstExit, 1*time.Second)
 			if err := <-ch; err != nil {
 				t.Fatal(err)
-			}
-			if tt.waitFor.afterFirstExit != "" {
-				time.Sleep(50 * time.Microsecond)
 			}
 
 			mux.Lock()
