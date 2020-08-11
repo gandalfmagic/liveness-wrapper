@@ -1,9 +1,9 @@
 #!/bin/sh
 
-trap 'echo "INT SIGNAL"; exit 0' INT
-trap 'i=1; while [ $i -le 10 ]; do sleep 0.01; echo EXIT ${i}0ms; i=$(( i + 1 )); done' EXIT
+trap 'echo "INT SIGNAL"; sleep 0.1; exit 0' INT
+trap 'i=0; while [ $i -le 9 ]; do i=$(( i + 1 )); sleep 0.01; echo EXIT ${i}0ms; done' EXIT
 
-i=1; while [ $i -le 10 ]; do sleep 0.01; echo ${i}0ms; i=$(( i + 1 )); done
+i=0; while [ $i -le 9 ]; do i=$(( i + 1 )); sleep 0.01; echo ${i}0ms; done
 
 >&2 echo "write a line to stderr"
 exit 10
