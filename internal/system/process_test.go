@@ -1439,7 +1439,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				t.Fatal(err)
 			}
 			if tt.waitFor.afterFirstExit != "" {
-				time.Sleep(150 * time.Microsecond)
+				time.Sleep(200 * time.Microsecond)
 			}
 
 			mux.Lock()
@@ -1717,7 +1717,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			},
 			want: want{
 				statusAfterFirstExit: WrapperStatusError,
-				statusAfterCancel:    WrapperStatusError,
+				statusAfterCancel:    WrapperStatusStopped,
 				err:                  false,
 			},
 		},
