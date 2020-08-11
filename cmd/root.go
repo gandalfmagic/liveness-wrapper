@@ -29,7 +29,7 @@ var (
 	config      string // config file location
 	showVersion bool   // whether to print version info or not
 
-	// to be populated by linker
+	// to be populated by linker.
 	version = "v0.0.0"
 	commit  = "HEAD"
 
@@ -90,7 +90,8 @@ func persistentPreRunE(_ *cobra.Command, _ []string) error {
 	printVersion()
 
 	if err := readConfig(); err != nil {
-		if e, ok := err.(viper.ConfigFileNotFoundError); ok {
+		if e, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			logger.Configure(os.Stdout, internal.RootName, logger.DefaultLogLevel)
 			logger.Infof("no configuration file found: %s", e)
 		} else {
 			return err
