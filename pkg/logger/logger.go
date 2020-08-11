@@ -94,11 +94,16 @@ func Configure(out io.WriteCloser, prefix, level string) {
 
 	if defaultLogger == nil {
 		defaultLogger = lumber.NewBasicLogger(out, logLvl)
+	} else {
+		defaultLogger.Level(logLvl)
 	}
 
-	(*lumber.ConsoleLogger)(defaultLogger).Level(logLvl)
-	(*lumber.ConsoleLogger)(defaultLogger).Prefix("[" + prefix + "]")
-	(*lumber.ConsoleLogger)(defaultLogger).TimeFormat("2006-01-02T15:04:05-0700")
+	if prefix != "" {
+		defaultLogger.Prefix("[" + prefix + "]")
+	} else {
+		defaultLogger.Prefix("")
+	}
+	defaultLogger.TimeFormat("2006-01-02T15:04:05-0700")
 }
 
 func getLogger() *lumber.ConsoleLogger {
