@@ -14,6 +14,7 @@ const (
 	readTimeout  = 5 * time.Second
 	writeTimeout = 10 * time.Second
 	idleTimeout  = 15 * time.Second
+	startupDelay = 100 * time.Millisecond
 )
 
 type Server interface {
@@ -168,7 +169,7 @@ func (s *server) Start(ctx context.Context) (chan<- bool, chan<- bool, <-chan st
 	}()
 
 	// Make sure the main process is ready before returning
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(startupDelay)
 
 	return s.updateReady, s.externalAlive, serverDone
 }
