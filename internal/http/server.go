@@ -14,7 +14,7 @@ const (
 	readTimeout  = 5 * time.Second
 	writeTimeout = 10 * time.Second
 	idleTimeout  = 15 * time.Second
-	startupDelay = 100 * time.Millisecond
+	startupDelay = 5 * time.Millisecond
 )
 
 type Server interface {
