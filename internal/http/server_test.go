@@ -14,10 +14,7 @@ func Test_server_do(t *testing.T) {
 		// mock the server shutdown function
 		// the mocked version closes a channel when it's called
 		oldHttpServerShutdown := httpServerShutdown
-		serverDone := make(chan struct{})
-		httpServerShutdown = func(context.Context, *http.Server, time.Duration) {
-			close(serverDone)
-		}
+		httpServerShutdown = func(context.Context, *http.Server, time.Duration) {}
 
 		// create the context
 		ctx, cancel := context.WithCancel(context.Background())
@@ -29,7 +26,9 @@ func Test_server_do(t *testing.T) {
 			updateReady:   make(chan bool),
 			server:        nil,
 		}
-		go s.do(ctx)
+		serverError := make(chan error)
+		serverDone := make(chan struct{})
+		go s.do(ctx, serverError, serverDone)
 
 		if s.IsReady() != false {
 			t.Errorf("isReady must be false: got %v", s.isReady)
@@ -119,10 +118,7 @@ func Test_server_do(t *testing.T) {
 		// mock the server shutdown function
 		// the mocked version closes a channel when it's called
 		oldHttpServerShutdown := httpServerShutdown
-		serverDone := make(chan struct{})
-		httpServerShutdown = func(context.Context, *http.Server, time.Duration) {
-			close(serverDone)
-		}
+		httpServerShutdown = func(context.Context, *http.Server, time.Duration) {}
 
 		// create the context
 		ctx, cancel := context.WithCancel(context.Background())
@@ -134,7 +130,9 @@ func Test_server_do(t *testing.T) {
 			updateReady:   make(chan bool),
 			server:        nil,
 		}
-		go s.do(ctx)
+		serverError := make(chan error)
+		serverDone := make(chan struct{})
+		go s.do(ctx, serverError, serverDone)
 
 		if s.IsReady() != false {
 			t.Errorf("isReady must be false: got %v", s.isReady)
@@ -236,7 +234,7 @@ func TestServer(t *testing.T) {
 		server := NewServer("127.0.0.1:6060", 15*time.Second, 100*time.Millisecond)
 		_, _, serverDone := server.Start(ctx)
 
-		server2 := NewServer("127.0.0.1:6060", 15*time.Second, 100*time.Millisecond)
+		server2 := NewServer("127.0.0.1:6060", 15*time.Second, 200*time.Millisecond)
 		_, _, server2Done := server2.Start(ctx)
 		<-server2Done
 

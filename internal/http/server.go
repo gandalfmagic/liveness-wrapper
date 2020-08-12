@@ -40,7 +40,7 @@ var httpServerShutdown = func(ctx context.Context, server *http.Server, shutdown
 	defer shutdownCancel()
 
 	server.SetKeepAlivesEnabled(false)
-	if err := server.Shutdown(ctxShutdown); err != nil {
+	if err := server.Shutdown(ctxShutdown); err != nil && !errors.Is(err, context.Canceled) {
 		logger.Fatalf("could not shut down the http server: %s", err)
 	}
 
@@ -73,8 +73,10 @@ func NewServer(addr string, shutdownTimeout, pingInterval time.Duration) Server 
 	return s
 }
 
-func (s *server) do(ctx context.Context) {
+func (s *server) do(ctx context.Context, serverError chan error, serverDone chan struct{}) {
+	defer close(serverDone)
 	defer close(s.pingChannel)
+	defer close(serverError)
 
 	timer := time.NewTimer(s.pingInterval)
 
@@ -83,6 +85,13 @@ func (s *server) do(ctx context.Context) {
 
 	for {
 		select {
+		case <-serverError:
+			s.setReady(false)
+
+			_ = timer.Stop()
+
+			return
+
 		case <-ctx.Done():
 			logger.Debugf("http server context is closing")
 			s.setReady(false)
@@ -140,12 +149,11 @@ func (s *server) do(ctx context.Context) {
 func (s *server) Start(ctx context.Context) (chan<- bool, chan<- bool, <-chan struct{}) {
 	isReady := make(chan struct{})
 	serverDone := make(chan struct{})
+	serverError := make(chan error)
 
-	go s.do(ctx)
+	go s.do(ctx, serverError, serverDone)
 
 	go func() {
-		defer close(serverDone)
-
 		s.mux.Lock()
 		addr := s.server.Addr
 		s.mux.Unlock()
@@ -157,6 +165,7 @@ func (s *server) Start(ctx context.Context) (chan<- bool, chan<- bool, <-chan st
 
 		if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Errorf("cannot bind http server on %s: %s", addr, err)
+			serverError <- err
 		}
 	}()
 
