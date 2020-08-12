@@ -26,6 +26,15 @@ const (
 	WrapperRestartAlways
 )
 
+type WrapperConfiguration struct {
+	RestartMode  WrapperRestartMode
+	HideStdOut   bool
+	HideStdErr   bool
+	FailOnStdErr bool
+	Timeout      time.Duration
+	Path         string
+}
+
 type WrapperData struct {
 	WrapperStatus WrapperStatus
 	Err           error
@@ -42,7 +51,7 @@ type wrapperHandler struct {
 	hideStdErr      bool
 	hideStdOut      bool
 	path            string
-	restart         WrapperRestartMode
+	restartMode     WrapperRestartMode
 	restartInterval time.Duration
 	timeout         time.Duration
 }
@@ -65,17 +74,16 @@ type wrapperHandler struct {
 //   arg: a list of arguments for the process
 // Return values:
 //   system.WrapperHandler
-func NewWrapperHandler(restart WrapperRestartMode, hideStdOut, hideStdErr, failOnStdErr bool, timeout time.Duration,
-	path string, arg ...string) WrapperHandler {
+func NewWrapperHandler(config WrapperConfiguration, arg ...string) WrapperHandler {
 	p := &wrapperHandler{
 		arg:             arg,
-		failOnStdErr:    failOnStdErr,
-		hideStdErr:      hideStdErr,
-		hideStdOut:      hideStdOut,
-		path:            path,
-		restart:         restart,
+		failOnStdErr:    config.FailOnStdErr,
+		hideStdErr:      config.HideStdErr,
+		hideStdOut:      config.HideStdOut,
+		path:            config.Path,
+		restartMode:     config.RestartMode,
 		restartInterval: 1 * time.Second,
-		timeout:         timeout,
+		timeout:         config.Timeout,
 	}
 
 	return p
@@ -164,37 +172,35 @@ func (p *wrapperHandler) run(ctx context.Context, runError chan<- error, signalO
 
 	var waitTimeout *time.Timer
 
-	if ctx != nil {
-		waitDone = make(chan struct{})
+	waitDone = make(chan struct{})
 
-		go func() {
-			var done bool
+	go func() {
+		var done bool
+		select {
+		case <-ctx.Done():
+			_ = cmd.Process.Signal(os.Interrupt)
+			waitTimeout = time.NewTimer(p.timeout)
+		case <-waitDone:
+			done = true
+		}
+
+		if !done {
 			select {
-			case <-ctx.Done():
-				_ = cmd.Process.Signal(os.Interrupt)
-				waitTimeout = time.NewTimer(p.timeout)
+			case <-waitTimeout.C:
+				_ = cmd.Process.Kill()
 			case <-waitDone:
+				if waitTimeout != nil {
+					_ = waitTimeout.Stop()
+				}
+
 				done = true
 			}
+		}
 
-			if !done {
-				select {
-				case <-waitTimeout.C:
-					_ = cmd.Process.Kill()
-				case <-waitDone:
-					if waitTimeout != nil {
-						_ = waitTimeout.Stop()
-					}
-
-					done = true
-				}
-			}
-
-			if !done {
-				<-waitDone
-			}
-		}()
-	}
+		if !done {
+			<-waitDone
+		}
+	}()
 
 	go func() {
 		logger.Debugf("waiting for the wrapped process %s to exit", p.path)
@@ -269,7 +275,7 @@ func (p *wrapperHandler) doRestart(ctx context.Context, runError chan error, log
 // it takes the state of the context and the exit code of the process
 // as input values.
 func (p *wrapperHandler) canRestart(contextIsCanceling bool, exitStatus int) bool {
-	switch p.restart {
+	switch p.restartMode {
 	case WrapperRestartNever:
 		return false
 	case WrapperRestartOnError:
@@ -291,9 +297,7 @@ func (p *wrapperHandler) do(ctx context.Context, chanWrapperData chan<- WrapperD
 
 	var status WrapperStatus
 
-	defer func() {
-		chanWrapperData <- WrapperData{status, processError, true}
-	}()
+	defer func() { chanWrapperData <- WrapperData{status, processError, true} }()
 
 	runError := make(chan error)
 	defer close(runError)
@@ -318,7 +322,6 @@ func (p *wrapperHandler) do(ctx context.Context, chanWrapperData chan<- WrapperD
 
 		case <-ctx.Done():
 			if contextDone {
-				logger.Debugf("the context is already closing")
 				continue
 			}
 
@@ -335,7 +338,7 @@ func (p *wrapperHandler) do(ctx context.Context, chanWrapperData chan<- WrapperD
 			status = WrapperStatusError
 			chanWrapperData <- WrapperData{status, nil, false}
 
-			logger.Debugf("wrapped process logged an wantErr: %d bytes", n)
+			logger.Debugf("wrapped process logged an error: %d bytes", n)
 
 		case err := <-runError:
 			status, processExitStatus, processError = p.parseRunError(err)

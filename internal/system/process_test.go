@@ -189,7 +189,7 @@ func Test_wrapperHandler_canRestart(t *testing.T) {
 				hideStdErr:   tt.fields.hideStdErr,
 				hideStdOut:   tt.fields.hideStdOut,
 				path:         tt.fields.path,
-				restart:      tt.fields.restart,
+				restartMode:  tt.fields.restart,
 			}
 			if got := p.canRestart(tt.args.contextIsCanceling, tt.args.exitStatus); got != tt.want {
 				t.Errorf("canRestart() = %v, want %v", got, tt.want)
@@ -299,7 +299,7 @@ func Test_wrapperHandler_do(t *testing.T) {
 				hideStdErr:   tt.fields.hideStdErr,
 				hideStdOut:   tt.fields.hideStdOut,
 				path:         tt.fields.path,
-				restart:      tt.fields.restart,
+				restartMode:  tt.fields.restart,
 			}
 
 			chanWrapperData := make(chan WrapperData)
@@ -548,7 +548,7 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 				hideStdErr:   tt.fields.hideStdErr,
 				hideStdOut:   tt.fields.hideStdOut,
 				path:         tt.fields.path,
-				restart:      tt.fields.restart,
+				restartMode:  tt.fields.restart,
 				timeout:      tt.fields.timeout,
 			}
 
@@ -1378,7 +1378,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				hideStdErr:      tt.fields.hideStdErr,
 				hideStdOut:      tt.fields.hideStdOut,
 				path:            tt.fields.path,
-				restart:         tt.fields.restart,
+				restartMode:     tt.fields.restart,
 				restartInterval: 50 * time.Millisecond,
 				timeout:         tt.fields.timeout,
 			}
@@ -1681,7 +1681,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 				hideStdErr:      tt.fields.hideStdErr,
 				hideStdOut:      tt.fields.hideStdOut,
 				path:            tt.fields.path,
-				restart:         tt.fields.restart,
+				restartMode:     tt.fields.restart,
 				restartInterval: 50 * time.Millisecond,
 				timeout:         tt.fields.timeout,
 			}
