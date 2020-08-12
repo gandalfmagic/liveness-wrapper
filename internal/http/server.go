@@ -147,21 +147,19 @@ func (s *server) do(ctx context.Context, serverError chan error, serverDone chan
 }
 
 func (s *server) Start(ctx context.Context) (chan<- bool, chan<- bool, <-chan struct{}) {
-	isReady := make(chan struct{})
 	serverDone := make(chan struct{})
 	serverError := make(chan error)
+
+	s.mux.Lock()
+	addr := s.server.Addr
+	s.mux.Unlock()
+
+	logger.Infof("starting http server on %s...", addr)
 
 	go s.do(ctx, serverError, serverDone)
 
 	go func() {
-		s.mux.Lock()
-		addr := s.server.Addr
-		s.mux.Unlock()
-
-		logger.Infof("starting http server on %s...", addr)
 		s.updateReady <- true
-
-		close(isReady)
 
 		if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Errorf("cannot bind http server on %s: %s", addr, err)
@@ -170,7 +168,7 @@ func (s *server) Start(ctx context.Context) (chan<- bool, chan<- bool, <-chan st
 	}()
 
 	// Make sure the main process is ready before returning
-	<-isReady
+	time.Sleep(100 * time.Millisecond)
 
 	return s.updateReady, s.externalAlive, serverDone
 }
