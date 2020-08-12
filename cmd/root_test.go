@@ -140,7 +140,15 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelWrapper := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(system.WrapperRestartNever, false, false, false, 1*time.Second, filepath.Join(testDirectory, "cmd/test_int_no_err.sh"))
+		wrapperConfiguration := system.WrapperConfiguration{
+			RestartMode:  system.WrapperRestartNever,
+			HideStdOut:   false,
+			HideStdErr:   false,
+			FailOnStdErr: false,
+			Timeout:      1 * time.Second,
+			Path:         filepath.Join(testDirectory, "cmd/test_int_no_err.sh"),
+		}
+		process := system.NewWrapperHandler(wrapperConfiguration)
 		wrapperData, wrapperDone := process.Start(ctx)
 
 		r := &runner{
@@ -194,7 +202,15 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelFuncProcess := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(system.WrapperRestartNever, false, false, false, 1*time.Second, filepath.Join(testDirectory, "cmd/error_10_int_no_err.sh"))
+		wrapperConfiguration := system.WrapperConfiguration{
+			RestartMode:  system.WrapperRestartNever,
+			HideStdOut:   false,
+			HideStdErr:   false,
+			FailOnStdErr: false,
+			Timeout:      1 * time.Second,
+			Path:         filepath.Join(testDirectory, "cmd/error_10_int_no_err.sh"),
+		}
+		process := system.NewWrapperHandler(wrapperConfiguration)
 		wrapperData, wrapperDone := process.Start(ctx)
 
 		r := &runner{
@@ -249,7 +265,15 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelWrapper := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(system.WrapperRestartNever, false, false, false, 1*time.Second, filepath.Join(testDirectory, "cmd/test_int_no_err.sh"))
+		wrapperConfiguration := system.WrapperConfiguration{
+			RestartMode:  system.WrapperRestartNever,
+			HideStdOut:   false,
+			HideStdErr:   false,
+			FailOnStdErr: false,
+			Timeout:      1 * time.Second,
+			Path:         filepath.Join(testDirectory, "cmd/test_int_no_err.sh"),
+		}
+		process := system.NewWrapperHandler(wrapperConfiguration)
 		wrapperData, wrapperDone := process.Start(ctx)
 
 		r := &runner{
@@ -330,7 +354,15 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelWrapper := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(system.WrapperRestartOnError, false, false, false, 1*time.Second, filepath.Join(testDirectory, "cmd/error_10_int_no_err.sh"))
+		wrapperConfiguration := system.WrapperConfiguration{
+			RestartMode:  system.WrapperRestartOnError,
+			HideStdOut:   false,
+			HideStdErr:   false,
+			FailOnStdErr: false,
+			Timeout:      1 * time.Second,
+			Path:         filepath.Join(testDirectory, "cmd/error_10_int_no_err.sh"),
+		}
+		process := system.NewWrapperHandler(wrapperConfiguration)
 		wrapperData, wrapperDone := process.Start(ctx)
 
 		r := &runner{
@@ -407,7 +439,15 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelFuncProcess := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(system.WrapperRestartOnError, false, false, false, 1*time.Second, filepath.Join(testDirectory, "cmd/error_10_int_no_err.sh"))
+		wrapperConfiguration := system.WrapperConfiguration{
+			RestartMode:  system.WrapperRestartOnError,
+			HideStdOut:   false,
+			HideStdErr:   false,
+			FailOnStdErr: false,
+			Timeout:      1 * time.Second,
+			Path:         filepath.Join(testDirectory, "cmd/error_10_int_no_err.sh"),
+		}
+		process := system.NewWrapperHandler(wrapperConfiguration)
 		wrapperData, wrapperDone := process.Start(ctx)
 
 		r := &runner{
@@ -523,7 +563,15 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelFuncProcess := context.WithCancel(context.Background())
 
 		// start the wrapped process
-		process := system.NewWrapperHandler(system.WrapperRestartNever, false, false, false, 1*time.Second, filepath.Join(testDirectory, "cmd/test_int_no_err.sh"))
+		wrapperConfiguration := system.WrapperConfiguration{
+			RestartMode:  system.WrapperRestartNever,
+			HideStdOut:   false,
+			HideStdErr:   false,
+			FailOnStdErr: false,
+			Timeout:      1 * time.Second,
+			Path:         filepath.Join(testDirectory, "cmd/test_int_no_err.sh"),
+		}
+		process := system.NewWrapperHandler(wrapperConfiguration)
 		wrapperData, wrapperDone := process.Start(ctx)
 
 		r := &runner{

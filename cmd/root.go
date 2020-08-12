@@ -193,9 +193,15 @@ func run(_ *cobra.Command, _ []string) error {
 
 	// start the wrapped process
 	restartMode := getRestartMode(viper.GetBool("process.restart-always"), viper.GetBool("process.restart-on-error"))
-	wrapper := system.NewWrapperHandler(restartMode, viper.GetBool("process.hide-stdout"), viper.GetBool("process.hide-stderr"),
-		viper.GetBool("process.fail-on-stderr"), viper.GetDuration("process.timeout"),
-		viper.GetString("process.path"), viper.GetStringSlice("process.args")...)
+	wrapperConfiguration := system.WrapperConfiguration{
+		RestartMode:  restartMode,
+		HideStdOut:   viper.GetBool("process.hide-stdout"),
+		HideStdErr:   viper.GetBool("process.hide-stderr"),
+		FailOnStdErr: viper.GetBool("process.fail-on-stderr"),
+		Timeout:      viper.GetDuration("process.timeout"),
+		Path:         viper.GetString("process.path"),
+	}
+	wrapper := system.NewWrapperHandler(wrapperConfiguration, viper.GetStringSlice("process.args")...)
 	wrapperData, wrapperDone := wrapper.Start(ctx)
 
 	r := &runner{
