@@ -90,7 +90,7 @@ func persistentPreRunE(_ *cobra.Command, _ []string) error {
 	printVersion()
 
 	if err := readConfig(); err != nil {
-		if e, ok := err.(viper.ConfigFileNotFoundError); !ok {
+		if e, ok := err.(viper.ConfigFileNotFoundError); ok {
 			logger.Configure(os.Stdout, internal.RootName, logger.DefaultLogLevel)
 			logger.Infof("no configuration file found: %s", e)
 		} else {
