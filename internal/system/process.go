@@ -232,7 +232,7 @@ func (p *wrapperHandler) parseRunError(processErr error) (status WrapperStatus, 
 			if waitStatus, ok := exitError.Sys().(syscall.WaitStatus); ok {
 				processExitStatus = waitStatus.ExitStatus()
 				err = NewProcessExitStatusError(processExitStatus)
-				logger.Infof("wrapped process exited with status: %d", byte(processExitStatus))
+				logger.Errorf("wrapped process exited with status: %d", byte(processExitStatus))
 
 				return
 			}
