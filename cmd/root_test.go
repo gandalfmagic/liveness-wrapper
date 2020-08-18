@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"syscall"
 	"testing"
 	"time"
 
@@ -160,7 +161,7 @@ func Test_runner_wait(t *testing.T) {
 		}
 
 		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 		defer close(c)
 
 		// execute the process
@@ -222,7 +223,7 @@ func Test_runner_wait(t *testing.T) {
 		}
 
 		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 		defer close(c)
 
 		// execute the process
@@ -285,7 +286,7 @@ func Test_runner_wait(t *testing.T) {
 		}
 
 		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 		defer close(c)
 
 		// execute the process
@@ -313,9 +314,9 @@ func Test_runner_wait(t *testing.T) {
 		}
 
 		// send CTRL-C
-		c <- os.Interrupt
+		c <- syscall.SIGTERM
 
-		ch = console.WaitForText("wrapped log: INT SIGNAL", 1*time.Second)
+		ch = console.WaitForText("wrapped log: TERM SIGNAL", 1*time.Second)
 		if err := <-ch; err != nil {
 			t.Fatal(err)
 		}
@@ -374,7 +375,7 @@ func Test_runner_wait(t *testing.T) {
 		}
 
 		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 		defer close(c)
 
 		// execute the process
@@ -420,7 +421,7 @@ func Test_runner_wait(t *testing.T) {
 		}
 
 		// send CTRL-C while the process is not running
-		c <- os.Interrupt
+		c <- syscall.SIGTERM
 
 		err := <-chanErr
 		if err == nil {
@@ -459,7 +460,7 @@ func Test_runner_wait(t *testing.T) {
 		}
 
 		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 		defer close(c)
 
 		// execute the process
@@ -522,7 +523,7 @@ func Test_runner_wait(t *testing.T) {
 		}
 
 		// send CTRL-C while the process is running
-		c <- os.Interrupt
+		c <- syscall.SIGTERM
 
 		ch = console.WaitForText("wrapped log: EXIT 10ms", 1*time.Second)
 		if err := <-ch; err != nil {
@@ -583,7 +584,7 @@ func Test_runner_wait(t *testing.T) {
 		}
 
 		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 		defer close(c)
 
 		// execute the process
