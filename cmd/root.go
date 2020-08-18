@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"syscall"
 	"time"
 
 	"github.com/gandalfmagic/liveness-wrapper/internal"
@@ -216,7 +217,7 @@ func run(_ *cobra.Command, _ []string) error {
 	c := make(chan os.Signal, 1)
 	defer close(c)
 
-	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 
 	return r.wait(cancelWrapper, cancelServer, c)
 }

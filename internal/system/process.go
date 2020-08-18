@@ -2,7 +2,6 @@ package system
 
 import (
 	"context"
-	"os"
 	"os/exec"
 	"syscall"
 	"time"
@@ -178,7 +177,7 @@ func (p *wrapperHandler) run(ctx context.Context, runError chan<- error, signalO
 		var done bool
 		select {
 		case <-ctx.Done():
-			_ = cmd.Process.Signal(os.Interrupt)
+			_ = cmd.Process.Signal(syscall.SIGTERM)
 			waitTimeout = time.NewTimer(p.timeout)
 		case <-waitDone:
 			done = true

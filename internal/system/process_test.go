@@ -595,7 +595,7 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 			<-done
 			<-chanWrapperDone
 
-			if err := tp.AssertStatusChange(tt.want.statusAfterDone, 500*time.Millisecond); err != nil {
+			if err := tp.AssertStatusChange(tt.want.statusAfterDone, 5*time.Millisecond); err != nil {
 				t.Errorf("after done: %s", err)
 			}
 
@@ -783,7 +783,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				afterStart:     "wrapped log: 10ms",
 				afterFirstExit: "wrapped process exited with status",
 				afterRestart:   "wrapped log: 10ms",
-				afterCancel:    "wrapped log: INT SIGNAL",
+				afterCancel:    "wrapped log: TERM SIGNAL",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -811,7 +811,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				afterStart:     "wrapped log: 10ms",
 				afterFirstExit: "wrapped process exited with status: 10",
 				afterRestart:   "wrapped log: 10ms",
-				afterCancel:    "wrapped log: INT SIGNAL",
+				afterCancel:    "wrapped log: TERM SIGNAL",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -1013,7 +1013,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				afterStart:     "wrapped log: 10ms",
 				afterFirstExit: "wrapped process exited with status",
 				afterRestart:   "wrapped log: 10ms",
-				afterCancel:    "wrapped log: INT SIGNAL",
+				afterCancel:    "wrapped log: TERM SIGNAL",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -1041,7 +1041,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				afterStart:     "wrapped log: 10ms",
 				afterFirstExit: "wrapped process exited with status",
 				afterRestart:   "wrapped log: 10ms",
-				afterCancel:    "wrapped log: INT SIGNAL",
+				afterCancel:    "wrapped log: TERM SIGNAL",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -1241,7 +1241,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				afterStart:     "wrapped log: 10ms",
 				afterFirstExit: "wrapped log: 100ms",
 				afterRestart:   "wrapped log: 10ms",
-				afterCancel:    "wrapped log: INT SIGNAL",
+				afterCancel:    "wrapped log: TERM SIGNAL",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -1269,7 +1269,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				afterStart:     "wrapped log: 10ms",
 				afterFirstExit: "wrapped log: 100ms",
 				afterRestart:   "wrapped log: 10ms",
-				afterCancel:    "wrapped log: INT SIGNAL",
+				afterCancel:    "wrapped log: TERM SIGNAL",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -1355,7 +1355,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				afterStart:     "wrapped log: 10ms",
 				afterFirstExit: "wrapped log: EXIT 100ms",
 				afterRestart:   "wrapped log: 10ms",
-				afterCancel:    "wrapped log: INT SIGNAL",
+				afterCancel:    "wrapped log: TERM SIGNAL",
 			},
 			want: want{
 				statusAfterStart:     WrapperStatusRunning,
@@ -1413,7 +1413,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if err := tp.AssertStatusChange(tt.want.statusAfterFirstExit, 500*time.Millisecond); err != nil {
+			if err := tp.AssertStatusChange(tt.want.statusAfterFirstExit, 5*time.Millisecond); err != nil {
 				t.Errorf("after first exit: %s", err)
 			}
 
@@ -1509,136 +1509,136 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 		waitFor waitFor
 		want    want
 	}{
-		//{
-		//	name: "Restart_on_error_Cancel_while_IS_running",
-		//	fields: fields{
-		//		arg:          []string{},
-		//		failOnStdErr: true,
-		//		hideStdErr:   false,
-		//		hideStdOut:   false,
-		//		path:         filepath.Join(testDirectory, "error_10_error_log.sh"),
-		//		restart:      WrapperRestartOnError,
-		//		timeout:      6 * time.Second,
-		//	},
-		//	args: args{
-		//		cancelWhileRunning: true,
-		//	},
-		//	waitFor: waitFor{
-		//		afterStart:     "wrapped log: 10ms",
-		//		afterError:     "wrapped log: write a line to stderr",
-		//		afterFirstExit: "wrapped process exited with status: 10",
-		//		afterRestart:   "wrapped log: 10ms",
-		//		afterCancel:    "wrapped log: INT SIGNAL",
-		//	},
-		//	want: want{
-		//		statusAfterFirstExit: WrapperStatusError,
-		//		err:                  true,
-		//	},
-		//},
-		//{
-		//	name: "Restart_on_error_Cancel_while_NOT_running",
-		//	fields: fields{
-		//		arg:          []string{},
-		//		failOnStdErr: true,
-		//		hideStdErr:   false,
-		//		hideStdOut:   false,
-		//		path:         filepath.Join(testDirectory, "error_10_error_log.sh"),
-		//		restart:      WrapperRestartOnError,
-		//		timeout:      6 * time.Second,
-		//	},
-		//	args: args{
-		//		cancelWhileRunning: false,
-		//	},
-		//	waitFor: waitFor{
-		//		afterStart:     "wrapped log: 10ms",
-		//		afterError:     "wrapped log: write a line to stderr",
-		//		afterFirstExit: "wrapped process exited with status: 10",
-		//		afterRestart:   "wrapped log: 10ms",
-		//		afterCancel:    "",
-		//	},
-		//	want: want{
-		//		statusAfterFirstExit: WrapperStatusError,
-		//		err:                  true,
-		//	},
-		//},
-		//{
-		//	name: "Restart_always_Get_error_Cancel_while_IS_running",
-		//	fields: fields{
-		//		arg:          []string{},
-		//		failOnStdErr: true,
-		//		hideStdErr:   false,
-		//		hideStdOut:   false,
-		//		path:         filepath.Join(testDirectory, "error_10_error_log.sh"),
-		//		restart:      WrapperRestartAlways,
-		//		timeout:      6 * time.Second,
-		//	},
-		//	args: args{
-		//		cancelWhileRunning: true,
-		//	},
-		//	waitFor: waitFor{
-		//		afterStart:     "wrapped log: 10ms",
-		//		afterError:     "wrapped log: write a line to stderr",
-		//		afterFirstExit: "wrapped process exited with status: 10",
-		//		afterRestart:   "wrapped log: 10ms",
-		//		afterCancel:    "wrapped log: INT SIGNAL",
-		//	},
-		//	want: want{
-		//		statusAfterFirstExit: WrapperStatusError,
-		//		err:                  true,
-		//	},
-		//},
-		//{
-		//	name: "Restart_always_Get_error_Cancel_while_NOT_running",
-		//	fields: fields{
-		//		arg:          []string{},
-		//		failOnStdErr: true,
-		//		hideStdErr:   false,
-		//		hideStdOut:   false,
-		//		path:         filepath.Join(testDirectory, "error_10_error_log.sh"),
-		//		restart:      WrapperRestartAlways,
-		//		timeout:      6 * time.Second,
-		//	},
-		//	args: args{
-		//		cancelWhileRunning: false,
-		//	},
-		//	waitFor: waitFor{
-		//		afterStart:     "wrapped log: 10ms",
-		//		afterError:     "wrapped log: write a line to stderr",
-		//		afterFirstExit: "wrapped process exited with status: 10",
-		//		afterRestart:   "wrapped log: 10ms",
-		//		afterCancel:    "",
-		//	},
-		//	want: want{
-		//		statusAfterFirstExit: WrapperStatusError,
-		//		err:                  true,
-		//	},
-		//},
-		//{
-		//	name: "Restart_always_Exit_without_error_Cancel_while_IS_running",
-		//	fields: fields{
-		//		arg:          []string{},
-		//		failOnStdErr: true,
-		//		hideStdErr:   false,
-		//		hideStdOut:   false,
-		//		path:         filepath.Join(testDirectory, "test_error_log.sh"),
-		//		restart:      WrapperRestartAlways,
-		//		timeout:      6 * time.Second,
-		//	},
-		//	args: args{
-		//		cancelWhileRunning: true,
-		//	},
-		//	waitFor: waitFor{
-		//		afterStart:     "wrapped log: 10ms",
-		//		afterError:     "wrapped log: write a line to stderr",
-		//		afterFirstExit: "wrapped log: 100ms",
-		//		afterRestart:   "wrapped log: 10ms",
-		//		afterCancel:    "wrapped log: INT SIGNAL",
-		//	},
-		//	want: want{
-		//		statusAfterFirstExit: WrapperStatusError,
-		//		err:                  false,
-		//	},
-		//},
+		{
+			name: "Restart_on_error_Cancel_while_IS_running",
+			fields: fields{
+				arg:          []string{},
+				failOnStdErr: true,
+				hideStdErr:   false,
+				hideStdOut:   false,
+				path:         filepath.Join(testDirectory, "error_10_error_log.sh"),
+				restart:      WrapperRestartOnError,
+				timeout:      6 * time.Second,
+			},
+			args: args{
+				cancelWhileRunning: true,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterError:     "wrapped log: write a line to stderr",
+				afterFirstExit: "wrapped process exited with status: 10",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "wrapped log: TERM SIGNAL",
+			},
+			want: want{
+				statusAfterFirstExit: WrapperStatusError,
+				err:                  true,
+			},
+		},
+		{
+			name: "Restart_on_error_Cancel_while_NOT_running",
+			fields: fields{
+				arg:          []string{},
+				failOnStdErr: true,
+				hideStdErr:   false,
+				hideStdOut:   false,
+				path:         filepath.Join(testDirectory, "error_10_error_log.sh"),
+				restart:      WrapperRestartOnError,
+				timeout:      6 * time.Second,
+			},
+			args: args{
+				cancelWhileRunning: false,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterError:     "wrapped log: write a line to stderr",
+				afterFirstExit: "wrapped process exited with status: 10",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "",
+			},
+			want: want{
+				statusAfterFirstExit: WrapperStatusError,
+				err:                  true,
+			},
+		},
+		{
+			name: "Restart_always_Get_error_Cancel_while_IS_running",
+			fields: fields{
+				arg:          []string{},
+				failOnStdErr: true,
+				hideStdErr:   false,
+				hideStdOut:   false,
+				path:         filepath.Join(testDirectory, "error_10_error_log.sh"),
+				restart:      WrapperRestartAlways,
+				timeout:      6 * time.Second,
+			},
+			args: args{
+				cancelWhileRunning: true,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterError:     "wrapped log: write a line to stderr",
+				afterFirstExit: "wrapped process exited with status: 10",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "wrapped log: TERM SIGNAL",
+			},
+			want: want{
+				statusAfterFirstExit: WrapperStatusError,
+				err:                  true,
+			},
+		},
+		{
+			name: "Restart_always_Get_error_Cancel_while_NOT_running",
+			fields: fields{
+				arg:          []string{},
+				failOnStdErr: true,
+				hideStdErr:   false,
+				hideStdOut:   false,
+				path:         filepath.Join(testDirectory, "error_10_error_log.sh"),
+				restart:      WrapperRestartAlways,
+				timeout:      6 * time.Second,
+			},
+			args: args{
+				cancelWhileRunning: false,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterError:     "wrapped log: write a line to stderr",
+				afterFirstExit: "wrapped process exited with status: 10",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "",
+			},
+			want: want{
+				statusAfterFirstExit: WrapperStatusError,
+				err:                  true,
+			},
+		},
+		{
+			name: "Restart_always_Exit_without_error_Cancel_while_IS_running",
+			fields: fields{
+				arg:          []string{},
+				failOnStdErr: true,
+				hideStdErr:   false,
+				hideStdOut:   false,
+				path:         filepath.Join(testDirectory, "test_error_log.sh"),
+				restart:      WrapperRestartAlways,
+				timeout:      6 * time.Second,
+			},
+			args: args{
+				cancelWhileRunning: true,
+			},
+			waitFor: waitFor{
+				afterStart:     "wrapped log: 10ms",
+				afterError:     "wrapped log: write a line to stderr",
+				afterFirstExit: "wrapped log: 100ms",
+				afterRestart:   "wrapped log: 10ms",
+				afterCancel:    "wrapped log: TERM SIGNAL",
+			},
+			want: want{
+				statusAfterFirstExit: WrapperStatusStopped,
+				err:                  false,
+			},
+		},
 		{
 			name: "Restart_always_Exit_without_error_Cancel_while_NOT_running",
 			fields: fields{
@@ -1712,7 +1712,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 			if err := <-ch; err != nil {
 				t.Fatal(err)
 			}
-			if err := tp.AssertStatusChange(WrapperStatusError, 500*time.Millisecond); err != nil {
+			if err := tp.AssertStatusChange(WrapperStatusError, 5*time.Millisecond); err != nil {
 				t.Errorf("after error: %s", err)
 			}
 
@@ -1721,7 +1721,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if err := tp.AssertStatusChange(tt.want.statusAfterFirstExit, 500*time.Millisecond); err != nil {
+			if err := tp.AssertStatusChange(tt.want.statusAfterFirstExit, 5*time.Millisecond); err != nil {
 				t.Fatalf("after error: %s", err)
 			}
 
