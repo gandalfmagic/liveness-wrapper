@@ -32,6 +32,7 @@ type WrapperConfiguration struct {
 	FailOnStdErr bool
 	Timeout      time.Duration
 	Path         string
+	Logger       *logger.Logger
 }
 
 type WrapperData struct {
@@ -53,26 +54,30 @@ type wrapperHandler struct {
 	restartMode     WrapperRestartMode
 	restartInterval time.Duration
 	timeout         time.Duration
+	logger          *logger.Logger
 }
 
 // NewWrapperStatus creates a new process wrapper and returns it
 // Parameters:
-//   restart WrapperRestartMode: indicates if and when the
-//     process must restart automatically
-//   hideStdOut bool: if true the stdout logs of the wrapped
-//    process are hidden from the logger
-//   hideStdErr bool: if true the stderr logs of the wrapped
-//     process are hidden from the logger
-//   failOnStdErr bool : if true the wrapped process is marked
-//     as failed if a log is detected on its stderr
-//   timeout time.Duration: indicates how much time we must wait
-//     for the wrapped process to exit gracefully; if this time
-//     expires and the process is still running, then we send
-//     a SIGKILL signal to it
-//   path: the path of the process executable
-//   arg: a list of arguments for the process
+//
+//	restart WrapperRestartMode: indicates if and when the
+//	  process must restart automatically
+//	hideStdOut bool: if true the stdout logs of the wrapped
+//	 process are hidden from the logger
+//	hideStdErr bool: if true the stderr logs of the wrapped
+//	  process are hidden from the logger
+//	failOnStdErr bool : if true the wrapped process is marked
+//	  as failed if a log is detected on its stderr
+//	timeout time.Duration: indicates how much time we must wait
+//	  for the wrapped process to exit gracefully; if this time
+//	  expires and the process is still running, then we send
+//	  a SIGKILL signal to it
+//	path: the path of the process executable
+//	arg: a list of arguments for the process
+//
 // Return values:
-//   system.WrapperHandler
+//
+//	system.WrapperHandler
 func NewWrapperHandler(config WrapperConfiguration, arg ...string) WrapperHandler {
 	p := &wrapperHandler{
 		arg:             arg,
@@ -83,6 +88,7 @@ func NewWrapperHandler(config WrapperConfiguration, arg ...string) WrapperHandle
 		restartMode:     config.RestartMode,
 		restartInterval: 1 * time.Second,
 		timeout:         config.Timeout,
+		logger:          config.Logger,
 	}
 
 	return p
@@ -91,15 +97,18 @@ func NewWrapperHandler(config WrapperConfiguration, arg ...string) WrapperHandle
 // Start executes the wrapped process, an returns the channels
 // on which it send events to the main process
 // Parameters:
-//   ctx context.Context: must be a Context created WithCancel,
-//     when the ctx.cancelFunc() method is called, the wrapped
-//     process will be terminated
+//
+//	ctx context.Context: must be a Context created WithCancel,
+//	  when the ctx.cancelFunc() method is called, the wrapped
+//	  process will be terminated
+//
 // Return values:
-//   <-chan WrapperData: is a channel sending an event every
-//     time the wrapped process changes its status
-//   <-chan struct{}: this channel will be closed when the
-//     wrapped process is completely terminated; the main
-//     process should wait for it to be closed, then exit
+//
+//	<-chan WrapperData: is a channel sending an event every
+//	  time the wrapped process changes its status
+//	<-chan struct{}: this channel will be closed when the
+//	  wrapped process is completely terminated; the main
+//	  process should wait for it to be closed, then exit
 func (p *wrapperHandler) Start(ctx context.Context) (<-chan WrapperData, <-chan struct{}) {
 	chanWrapperData := make(chan WrapperData)
 	chanWrapperDone := make(chan struct{})
@@ -112,24 +121,25 @@ func (p *wrapperHandler) Start(ctx context.Context) (<-chan WrapperData, <-chan 
 // initCmdLogWrappers is an internal method used to initialize
 // the behaviour of the wrapped command's logs
 // Parameters:
-//   cmd *exec.Cmd: the wrapped command
-//   signalOnErrors bool: if true, the wrapper will send a
-//     signal on the loggedErrors Channel if an error is
-//     detected on its stderr
-//   loggedErrors chan<- int: the channel where the signal
-//     will be sent when an error is detected on the wrapped
-//     process' stderr; the channel will receive the number
-//     of bytes written on stderr
+//
+//	cmd *exec.Cmd: the wrapped command
+//	signalOnErrors bool: if true, the wrapper will send a
+//	  signal on the loggedErrors Channel if an error is
+//	  detected on its stderr
+//	loggedErrors chan<- int: the channel where the signal
+//	  will be sent when an error is detected on the wrapped
+//	  process' stderr; the channel will receive the number
+//	  of bytes written on stderr
 func (p *wrapperHandler) initCmdLogWrappers(cmd *exec.Cmd, signalOnErrors bool, loggedErrors chan<- int) {
 	if !p.hideStdOut {
-		cmd.Stdout = logger.NewLogInfoWriter("wrapped log")
+		cmd.Stdout = logger.NewLogInfoWriter("wrapped log", p.logger)
 	}
 
 	if !p.hideStdErr {
 		if signalOnErrors {
-			cmd.Stderr = logger.SignalOnWrite(loggedErrors, logger.NewLogErrorWriter("wrapped log"))
+			cmd.Stderr = logger.SignalOnWrite(loggedErrors, logger.NewLogErrorWriter("wrapped log", p.logger))
 		} else {
-			cmd.Stderr = logger.NewLogErrorWriter("wrapped log")
+			cmd.Stderr = logger.NewLogErrorWriter("wrapped log", p.logger)
 		}
 	}
 }
@@ -137,21 +147,24 @@ func (p *wrapperHandler) initCmdLogWrappers(cmd *exec.Cmd, signalOnErrors bool, 
 // run executes a new instance of the wrapped process and starts
 // the goroutine responsible to wait for it to end.
 // Parameters:
-//   ctx context.Context: must be a Context created WithCancel,
-//     when the ctx.cancelFunc() method is called, the wrapped
-//     process will be terminated
-//   runError chan<- error: this channel will receive the
-//     error of the wrapped process when it exit
-//   signalOnErrors bool: if true, the wrapper will send a
-//     signal on the loggedErrors Channel if an error is
-//     detected on its stderr
-//   loggedErrors chan<- int: the channel where the signal
-//     will be sent when an error is detected on the wrapped
-//     process' stderr; the channel will receive the number
-//     of bytes written on stderr
+//
+//	ctx context.Context: must be a Context created WithCancel,
+//	  when the ctx.cancelFunc() method is called, the wrapped
+//	  process will be terminated
+//	runError chan<- error: this channel will receive the
+//	  error of the wrapped process when it exit
+//	signalOnErrors bool: if true, the wrapper will send a
+//	  signal on the loggedErrors Channel if an error is
+//	  detected on its stderr
+//	loggedErrors chan<- int: the channel where the signal
+//	  will be sent when an error is detected on the wrapped
+//	  process' stderr; the channel will receive the number
+//	  of bytes written on stderr
+//
 // Return values:
-//   error: this function will return an error if the wrapped
-//     process cannot be started for any reason
+//
+//	error: this function will return an error if the wrapped
+//	  process cannot be started for any reason
 func (p *wrapperHandler) run(ctx context.Context, runError chan<- error, signalOnErrors bool, loggedErrors chan<- int) error {
 	cmd := exec.Command(p.path, p.arg...)
 
@@ -160,7 +173,7 @@ func (p *wrapperHandler) run(ctx context.Context, runError chan<- error, signalO
 	err := cmd.Start()
 	if err != nil {
 		go func() {
-			logger.Errorf("cannot start the wrapped process %s: %s", p.path, err)
+			p.logger.Errorf("cannot start the wrapped process %s: %s", p.path, err)
 			runError <- err
 		}()
 
@@ -202,7 +215,7 @@ func (p *wrapperHandler) run(ctx context.Context, runError chan<- error, signalO
 	}()
 
 	go func() {
-		logger.Debugf("waiting for the wrapped process %s to exit", p.path)
+		p.logger.Debugf("waiting for the wrapped process %s to exit", p.path)
 		runError <- cmd.Wait()
 
 		if waitDone != nil {
@@ -216,13 +229,16 @@ func (p *wrapperHandler) run(ctx context.Context, runError chan<- error, signalO
 // parseRunError receive the error from the wrapped process, and extract all
 // the information needed
 // Parameters:
-//   processErr error: the error returned from the wrapped process
+//
+//	processErr error: the error returned from the wrapped process
+//
 // Return values:
-//   status WrapperStatus: the new status of the wrapped process, based on
-//     the value of err
-//   processExitStatus int: the error code returned from the wrapped
-//     process when it ended
-//   err error: an error indicating
+//
+//	status WrapperStatus: the new status of the wrapped process, based on
+//	  the value of err
+//	processExitStatus int: the error code returned from the wrapped
+//	  process when it ended
+//	err error: an error indicating
 func (p *wrapperHandler) parseRunError(processErr error) (status WrapperStatus, processExitStatus int, err error) {
 	if processErr != nil {
 		status = WrapperStatusError
@@ -231,7 +247,7 @@ func (p *wrapperHandler) parseRunError(processErr error) (status WrapperStatus, 
 			if waitStatus, ok := exitError.Sys().(syscall.WaitStatus); ok {
 				processExitStatus = waitStatus.ExitStatus()
 				err = NewProcessExitStatusError(processExitStatus)
-				logger.Errorf("wrapped process exited with status: %d", byte(processExitStatus))
+				p.logger.Errorf("wrapped process exited with status: %d", byte(processExitStatus))
 
 				return
 			}
@@ -248,7 +264,7 @@ func (p *wrapperHandler) parseRunError(processErr error) (status WrapperStatus, 
 
 	status = WrapperStatusStopped
 
-	logger.Debugf("wrapped process completed without errors")
+	p.logger.Debugf("wrapped process completed without errors")
 
 	return
 }
@@ -264,7 +280,7 @@ func (p *wrapperHandler) doRestart(ctx context.Context, runError chan error, log
 
 	status = WrapperStatusRunning
 
-	logger.Infof("wrapped process %s started", p.path)
+	p.logger.Infof("wrapped process %s started", p.path)
 
 	return
 }
@@ -312,7 +328,7 @@ func (p *wrapperHandler) do(ctx context.Context, chanWrapperData chan<- WrapperD
 		select {
 		case <-restartTimer.C:
 			if contextDone {
-				logger.Debugf("cannot execute the wrapped process, the context is closing")
+				p.logger.Debugf("cannot execute the wrapped process, the context is closing")
 				return
 			}
 
@@ -326,10 +342,10 @@ func (p *wrapperHandler) do(ctx context.Context, chanWrapperData chan<- WrapperD
 
 			contextDone = true
 
-			logger.Debugf("received the signal to close the wrapped process context")
+			p.logger.Debugf("received the signal to close the wrapped process context")
 
 			if restartTimer.Stop() {
-				logger.Debugf("wrapped process is scheduled, but not started yet, exit now")
+				p.logger.Debugf("wrapped process is scheduled, but not started yet, exit now")
 				return
 			}
 
@@ -337,18 +353,18 @@ func (p *wrapperHandler) do(ctx context.Context, chanWrapperData chan<- WrapperD
 			status = WrapperStatusError
 			chanWrapperData <- WrapperData{status, nil, false}
 
-			logger.Debugf("wrapped process logged an error: %d bytes", n)
+			p.logger.Debugf("wrapped process logged an error: %d bytes", n)
 
 		case err := <-runError:
 			status, processExitStatus, processError = p.parseRunError(err)
 			chanWrapperData <- WrapperData{status, nil, false}
 
 			if p.canRestart(contextDone, processExitStatus) {
-				logger.Debugf("the wrapped process will restart in %d seconds...", p.restartInterval/time.Second)
+				p.logger.Debugf("the wrapped process will restart in %d seconds...", p.restartInterval/time.Second)
 				restartTimer = time.NewTimer(p.restartInterval)
 				p.restartInterval *= 2
 			} else {
-				logger.Debugf("wrapped process is completed, exiting now...")
+				p.logger.Debugf("wrapped process is completed, exiting now...")
 				return
 			}
 		}

@@ -7,12 +7,12 @@ import (
 	"github.com/gandalfmagic/liveness-wrapper/pkg/logger"
 )
 
-func writeToResponse(handler string, status int, w http.ResponseWriter) {
+func writeToResponse(handler string, status int, w http.ResponseWriter, zLogger *logger.Logger) {
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(status)
 
 	if _, err := io.WriteString(w, http.StatusText(status)); err != nil {
-		logger.Errorf("cannot write response from %s handler: %s", handler, err)
+		zLogger.Errorf("cannot write response from %s handler: %s", handler, err)
 		return
 	}
 }
@@ -25,7 +25,7 @@ func (s *server) ReadyHandler(w http.ResponseWriter, _ *http.Request) {
 		status = http.StatusServiceUnavailable
 	}
 
-	writeToResponse("/ready", status, w)
+	writeToResponse("/ready", status, w, s.logger)
 }
 
 func (s *server) AliveHandler(w http.ResponseWriter, _ *http.Request) {
@@ -36,15 +36,15 @@ func (s *server) AliveHandler(w http.ResponseWriter, _ *http.Request) {
 		status = http.StatusServiceUnavailable
 	}
 
-	writeToResponse("/alive", status, w)
+	writeToResponse("/alive", status, w, s.logger)
 }
 
 func (s *server) PingHandler(w http.ResponseWriter, _ *http.Request) {
 	s.pingChannel <- true
 
-	writeToResponse("/ping", http.StatusOK, w)
+	writeToResponse("/ping", http.StatusOK, w, s.logger)
 }
 
-func RootHandler(w http.ResponseWriter, _ *http.Request) {
-	writeToResponse("/*", http.StatusNotFound, w)
+func (s *server) RootHandler(w http.ResponseWriter, _ *http.Request) {
+	writeToResponse("/*", http.StatusNotFound, w, s.logger)
 }

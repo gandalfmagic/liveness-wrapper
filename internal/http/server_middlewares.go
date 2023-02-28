@@ -1,10 +1,9 @@
 package http
 
 import (
+	"github.com/gandalfmagic/liveness-wrapper/pkg/logger"
 	"net/http"
 	"time"
-
-	"github.com/gandalfmagic/liveness-wrapper/pkg/logger"
 )
 
 type responseWriter struct {
@@ -31,17 +30,13 @@ func (rw *responseWriter) WriteHeader(code int) {
 	rw.wroteHeader = true
 }
 
-func LoggingMiddleware() func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			start := time.Now()
-			wrapped := wrapResponseWriter(w)
-			next.ServeHTTP(wrapped, r)
-			logger.HTTPDebugWithDuration(r, wrapped.status, time.Since(start))
-		}
-
-		return http.HandlerFunc(fn)
-	}
+func Log(l *logger.Logger, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		wrapped := wrapResponseWriter(w)
+		next.ServeHTTP(wrapped, r)
+		l.HTTPDebugWithDuration(r, wrapped.status, time.Since(start))
+	})
 }
 
 func inStringSlice(slice []string, str string) bool {
@@ -54,17 +49,13 @@ func inStringSlice(slice []string, str string) bool {
 	return false
 }
 
-func MethodsMiddleware(methods []string) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			if inStringSlice(methods, r.Method) {
-				next.ServeHTTP(w, r)
-				return
-			}
-
-			writeToResponse("methods-middleware", http.StatusMethodNotAllowed, w)
+func Methods(methods []string, l *logger.Logger, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if inStringSlice(methods, r.Method) {
+			next.ServeHTTP(w, r)
+			return
 		}
 
-		return http.HandlerFunc(fn)
-	}
+		writeToResponse("methods-middleware", http.StatusMethodNotAllowed, w, l)
+	})
 }

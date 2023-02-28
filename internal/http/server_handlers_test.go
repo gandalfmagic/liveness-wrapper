@@ -1,8 +1,10 @@
 package http
 
 import (
+	"github.com/gandalfmagic/liveness-wrapper/pkg/logger"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 )
@@ -40,6 +42,9 @@ func Test_server_ReadyHandler(t *testing.T) {
 			want:   http.StatusServiceUnavailable,
 		},
 	}
+
+	zLogger, _ := logger.NewLogger(os.Stdout, "test", "info")
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &server{
@@ -50,6 +55,7 @@ func Test_server_ReadyHandler(t *testing.T) {
 				pingInterval:  tt.fields.pingInterval,
 				updateReady:   tt.fields.updateReady,
 				server:        tt.fields.server,
+				logger:        zLogger,
 			}
 
 			req, err := http.NewRequest(tt.args.method, tt.args.path, nil)
@@ -101,6 +107,9 @@ func Test_server_AliveHandler(t *testing.T) {
 			want:   http.StatusServiceUnavailable,
 		},
 	}
+
+	zLogger, _ := logger.NewLogger(os.Stdout, "test", "info")
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &server{
@@ -111,6 +120,7 @@ func Test_server_AliveHandler(t *testing.T) {
 				pingInterval:  tt.fields.pingInterval,
 				updateReady:   tt.fields.updateReady,
 				server:        tt.fields.server,
+				logger:        zLogger,
 			}
 
 			req, err := http.NewRequest(tt.args.method, tt.args.path, nil)
@@ -160,6 +170,9 @@ func Test_server_PingHandler(t *testing.T) {
 			want:   want{statusCode: http.StatusOK, channel: true},
 		},
 	}
+
+	zLogger, _ := logger.NewLogger(os.Stdout, "test", "info")
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &server{
@@ -170,6 +183,7 @@ func Test_server_PingHandler(t *testing.T) {
 				pingInterval:  tt.fields.pingInterval,
 				updateReady:   tt.fields.updateReady,
 				server:        tt.fields.server,
+				logger:        zLogger,
 			}
 
 			done := make(chan struct{})

@@ -6,7 +6,6 @@ import (
 	"github.com/gandalfmagic/liveness-wrapper/pkg/logger"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 )
@@ -64,16 +63,14 @@ func TestLoggingMiddleware(t *testing.T) {
 		}()
 
 		// Redirect the logger to a buffer
-		logger.Configure(wc, "test", "DEBUG")
+		zLogger, _ := logger.NewLogger(wc, "test", "debug")
 
 		// Create test HTTP server
-		ts := httptest.NewServer(LoggingMiddleware()(testGetHandler()))
+		ts := httptest.NewServer(Log(zLogger, testGetHandler()))
 		defer ts.Close()
 
 		// Trigger a request to get output to log
 		_, _ = http.Get(fmt.Sprintf("%s/", ts.URL))
-
-		logger.Configure(os.Stdout, "test", "DEBUG")
 
 		// Test output
 		t.Log(buf.String())
@@ -117,7 +114,7 @@ func TestMethodsMiddleware(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create test HTTP server
-			ts := httptest.NewServer(MethodsMiddleware(tt.args.methods)(testGetHandler()))
+			ts := httptest.NewServer(Methods(tt.args.methods, nil, testGetHandler()))
 			defer ts.Close()
 
 			// Trigger a request to get output to log

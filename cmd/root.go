@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/gandalfmagic/liveness-wrapper/pkg/logger"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -12,8 +13,6 @@ import (
 	"github.com/gandalfmagic/liveness-wrapper/internal"
 	"github.com/gandalfmagic/liveness-wrapper/internal/http"
 	"github.com/gandalfmagic/liveness-wrapper/internal/system"
-	"github.com/gandalfmagic/liveness-wrapper/pkg/logger"
-
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -89,17 +88,6 @@ func printVersion() {
 
 func persistentPreRunE(_ *cobra.Command, _ []string) error {
 	printVersion()
-
-	if err := readConfig(); err != nil {
-		if e, ok := err.(viper.ConfigFileNotFoundError); ok {
-			logger.Configure(os.Stdout, internal.RootName, logger.DefaultLogLevel)
-			logger.Infof("no configuration file found: %s", e)
-		} else {
-			return err
-		}
-	}
-
-	logger.Configure(os.Stdout, internal.RootName, viper.GetString("log.level"))
 
 	return nil
 }
@@ -183,11 +171,30 @@ func (r *runner) wait(cancelWrapper, cancelServer context.CancelFunc, c <-chan o
 	}
 }
 
-func run(_ *cobra.Command, _ []string) error {
+func run(_ *cobra.Command, _ []string) (err error) {
+	var zLogger *logger.Logger
+
+	if err = readConfig(); err != nil {
+		if e, ok := err.(viper.ConfigFileNotFoundError); ok {
+			if zLogger, err = logger.NewLogger(os.Stdout, internal.RootName, logger.DefaultLogLevel); err != nil {
+				return
+			}
+
+			zLogger.Infof("no configuration file found: %s", e)
+		} else {
+			return
+		}
+	}
+
+	if zLogger, err = logger.NewLogger(os.Stdout, internal.RootName, viper.GetString("log.level")); err != nil {
+		return
+	}
+	defer zLogger.Close()
+
 	ctx, cancelServer := context.WithCancel(context.Background())
 
 	// create the http server
-	server := http.NewServer(viper.GetString("server.address"), viper.GetDuration("server.shutdown-timeout"), viper.GetDuration("server.ping-timeout"))
+	server := http.NewServer(viper.GetString("server.address"), viper.GetDuration("server.shutdown-timeout"), viper.GetDuration("server.ping-timeout"), zLogger)
 	updateReady, updateAlive, serverDone := server.Start(ctx)
 
 	ctx, cancelWrapper := context.WithCancel(context.Background())
@@ -201,6 +208,7 @@ func run(_ *cobra.Command, _ []string) error {
 		FailOnStdErr: viper.GetBool("process.fail-on-stderr"),
 		Timeout:      viper.GetDuration("process.timeout"),
 		Path:         viper.GetString("process.path"),
+		Logger:       zLogger,
 	}
 	wrapper := system.NewWrapperHandler(wrapperConfiguration, viper.GetStringSlice("process.args")...)
 	wrapperData, wrapperDone := wrapper.Start(ctx)

@@ -291,7 +291,7 @@ func Test_wrapperHandler_do(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			console := testconsole.NewTestConsole()
-			logger.New(console, "", "INFO")
+			zLogger, _ := logger.NewLogger(console, "test", "info")
 
 			p := &wrapperHandler{
 				arg:          tt.fields.arg,
@@ -300,6 +300,7 @@ func Test_wrapperHandler_do(t *testing.T) {
 				hideStdOut:   tt.fields.hideStdOut,
 				path:         tt.fields.path,
 				restartMode:  tt.fields.restart,
+				logger:       zLogger,
 			}
 
 			chanWrapperData := make(chan WrapperData)
@@ -540,7 +541,7 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			console := testconsole.NewTestConsole()
-			logger.New(console, "", "INFO")
+			zLogger, _ := logger.NewLogger(console, "test", "info")
 
 			p := &wrapperHandler{
 				arg:          tt.fields.arg,
@@ -550,6 +551,7 @@ func Test_wrapperHandler_do_With_cancel(t *testing.T) {
 				path:         tt.fields.path,
 				restartMode:  tt.fields.restart,
 				timeout:      tt.fields.timeout,
+				logger:       zLogger,
 			}
 
 			chanWrapperData := make(chan WrapperData)
@@ -1370,7 +1372,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			console := testconsole.NewTestConsole()
-			logger.New(console, "", "INFO")
+			zLogger, _ := logger.NewLogger(console, "test", "info")
 
 			p := &wrapperHandler{
 				arg:             tt.fields.arg,
@@ -1381,6 +1383,7 @@ func Test_wrapperHandler_do_With_restart(t *testing.T) {
 				restartMode:     tt.fields.restart,
 				restartInterval: 50 * time.Millisecond,
 				timeout:         tt.fields.timeout,
+				logger:          zLogger,
 			}
 
 			chanWrapperData := make(chan WrapperData)
@@ -1670,7 +1673,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			console := testconsole.NewTestConsole()
-			logger.New(console, "test", "INFO")
+			zLogger, _ := logger.NewLogger(console, "test", "info")
 
 			// create the context
 			ctx, cancel := context.WithCancel(context.Background())
@@ -1684,6 +1687,7 @@ func Test_wrapperHandler_do_Log_error(t *testing.T) {
 				restartMode:     tt.fields.restart,
 				restartInterval: 50 * time.Millisecond,
 				timeout:         tt.fields.timeout,
+				logger:          zLogger,
 			}
 
 			chanWrapperData := make(chan WrapperData)

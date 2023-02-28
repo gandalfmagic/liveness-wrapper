@@ -31,37 +31,39 @@ type server struct {
 	shutdownTimeout time.Duration
 	updateReady     chan bool
 	mux             sync.Mutex
+	logger          *logger.Logger
 }
 
-var httpServerShutdown = func(ctx context.Context, server *http.Server, shutdownTimeout time.Duration) {
+var httpServerShutdown = func(ctx context.Context, server *http.Server, shutdownTimeout time.Duration, zLogger *logger.Logger) {
 
-	logger.Infof("shutting down the http server...")
+	zLogger.Infof("shutting down the http server...")
 
 	ctxShutdown, shutdownCancel := context.WithTimeout(ctx, shutdownTimeout)
 	defer shutdownCancel()
 
 	server.SetKeepAlivesEnabled(false)
 	if err := server.Shutdown(ctxShutdown); err != nil && !errors.Is(err, context.Canceled) {
-		logger.Fatalf("could not shut down the http server: %s", err)
+		zLogger.Fatalf("could not shut down the http server: %s", err)
 	}
 
-	logger.Infof("http server shutdown complete...")
+	zLogger.Infof("http server shutdown complete...")
 }
 
-func NewServer(addr string, shutdownTimeout, pingInterval time.Duration) Server {
+func NewServer(addr string, shutdownTimeout, pingInterval time.Duration, zLogger *logger.Logger) Server {
 	s := &server{
 		externalAlive:   make(chan bool),
 		pingChannel:     make(chan bool),
 		pingInterval:    pingInterval,
 		shutdownTimeout: shutdownTimeout,
 		updateReady:     make(chan bool),
+		logger:          zLogger,
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/ready", LoggingMiddleware()(MethodsMiddleware([]string{"GET"})(http.HandlerFunc(s.ReadyHandler))))
-	mux.Handle("/alive", LoggingMiddleware()(MethodsMiddleware([]string{"GET"})(http.HandlerFunc(s.AliveHandler))))
-	mux.Handle("/ping", LoggingMiddleware()(MethodsMiddleware([]string{"GET"})(http.HandlerFunc(s.PingHandler))))
-	mux.Handle("/", LoggingMiddleware()(MethodsMiddleware([]string{"GET"})(http.HandlerFunc(RootHandler))))
+	mux.Handle("/ready", Log(zLogger, Methods([]string{"GET"}, zLogger, http.HandlerFunc(s.ReadyHandler))))
+	mux.Handle("/alive", Log(zLogger, Methods([]string{"GET"}, zLogger, http.HandlerFunc(s.AliveHandler))))
+	mux.Handle("/ping", Log(zLogger, Methods([]string{"GET"}, zLogger, http.HandlerFunc(s.PingHandler))))
+	mux.Handle("/", Log(zLogger, Methods([]string{"GET"}, zLogger, http.HandlerFunc(s.RootHandler))))
 
 	s.server = &http.Server{
 		Addr:         addr,
@@ -94,22 +96,22 @@ func (s *server) do(ctx context.Context, serverError chan error, serverDone chan
 			return
 
 		case <-ctx.Done():
-			logger.Debugf("http server context is closing")
+			s.logger.Debugf("http server context is closing")
 			s.setReady(false)
 
 			_ = timer.Stop()
 
-			httpServerShutdown(ctx, s.server, s.shutdownTimeout)
+			httpServerShutdown(ctx, s.server, s.shutdownTimeout, s.logger)
 
 			return
 
 		case isExternalAlive = <-s.externalAlive:
 			s.setAlive(isExternalAlive && isPingAlive)
-			logger.Debugf("alive status changed to %t", isExternalAlive && isPingAlive)
+			s.logger.Debugf("alive status changed to %t", isExternalAlive && isPingAlive)
 
 		case isPingAlive = <-s.pingChannel:
 			if s.pingInterval == 0 {
-				logger.Debugf("timeout is %s, ignoring ping endpoint", s.pingInterval)
+				s.logger.Debugf("timeout is %s, ignoring ping endpoint", s.pingInterval)
 
 				isPingAlive = true
 
@@ -119,22 +121,22 @@ func (s *server) do(ctx context.Context, serverError chan error, serverDone chan
 			}
 
 			s.setAlive(isExternalAlive && isPingAlive)
-			logger.Debugf("alive status changed to %t", isExternalAlive && isPingAlive)
+			s.logger.Debugf("alive status changed to %t", isExternalAlive && isPingAlive)
 
 			if !timer.Stop() {
 				<-timer.C
 			}
 
 			timer.Reset(s.pingInterval)
-			logger.Debugf("timer restarted")
+			s.logger.Debugf("timer restarted")
 
 		case isReady := <-s.updateReady:
 			s.setReady(isReady)
-			logger.Debugf("ready status changed to %t", isReady)
+			s.logger.Debugf("ready status changed to %t", isReady)
 
 		case <-timer.C:
 			if s.pingInterval == 0 {
-				logger.Debugf("timeout is %s, the timeout is ignored", s.pingInterval)
+				s.logger.Debugf("timeout is %s, the timeout is ignored", s.pingInterval)
 				continue
 			}
 
@@ -142,7 +144,7 @@ func (s *server) do(ctx context.Context, serverError chan error, serverDone chan
 
 			s.setAlive(isExternalAlive && isPingAlive)
 			timer.Reset(s.pingInterval)
-			logger.Debugf("timer is expired, restarted with interval %s", s.pingInterval)
+			s.logger.Debugf("timer is expired, restarted with interval %s", s.pingInterval)
 		}
 	}
 }
@@ -155,7 +157,7 @@ func (s *server) Start(ctx context.Context) (chan<- bool, chan<- bool, <-chan st
 	addr := s.server.Addr
 	s.mux.Unlock()
 
-	logger.Infof("starting http server on %s...", addr)
+	s.logger.Infof("starting http server on %s...", addr)
 
 	go s.do(ctx, serverError, serverDone)
 
@@ -163,7 +165,7 @@ func (s *server) Start(ctx context.Context) (chan<- bool, chan<- bool, <-chan st
 		s.updateReady <- true
 
 		if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Errorf("cannot bind http server on %s: %s", addr, err)
+			s.logger.Errorf("cannot bind http server on %s: %s", addr, err)
 			serverError <- err
 		}
 	}()

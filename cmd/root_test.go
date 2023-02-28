@@ -129,13 +129,13 @@ func Test_getRestartMode(t *testing.T) {
 
 func Test_runner_wait(t *testing.T) {
 	console := testconsole.NewTestConsole()
-	logger.New(console, "test", "INFO")
+	zLogger, _ := logger.NewLogger(console, "test", "info")
 
 	t.Run("Exit_without_error", func(t *testing.T) {
 		ctx, cancelServer := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 10*time.Minute)
+		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 10*time.Minute, zLogger)
 		updateReady, updateAlive, serverDone := server.Start(ctx)
 
 		ctx, cancelWrapper := context.WithCancel(context.Background())
@@ -148,6 +148,7 @@ func Test_runner_wait(t *testing.T) {
 			FailOnStdErr: false,
 			Timeout:      1 * time.Second,
 			Path:         filepath.Join(testDirectory, "cmd/test_int_no_err.sh"),
+			Logger:       zLogger,
 		}
 		process := system.NewWrapperHandler(wrapperConfiguration)
 		wrapperData, wrapperDone := process.Start(ctx)
@@ -197,7 +198,7 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelFuncHttp := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 10*time.Minute)
+		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 10*time.Minute, zLogger)
 		updateReady, updateAlive, serverDone := server.Start(ctx)
 
 		ctx, cancelFuncProcess := context.WithCancel(context.Background())
@@ -210,6 +211,7 @@ func Test_runner_wait(t *testing.T) {
 			FailOnStdErr: false,
 			Timeout:      1 * time.Second,
 			Path:         filepath.Join(testDirectory, "cmd/error_10_int_no_err.sh"),
+			Logger:       zLogger,
 		}
 		process := system.NewWrapperHandler(wrapperConfiguration)
 		wrapperData, wrapperDone := process.Start(ctx)
@@ -260,7 +262,7 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelServer := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 10*time.Minute)
+		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 10*time.Minute, zLogger)
 		updateReady, updateAlive, serverDone := server.Start(ctx)
 
 		ctx, cancelWrapper := context.WithCancel(context.Background())
@@ -273,6 +275,7 @@ func Test_runner_wait(t *testing.T) {
 			FailOnStdErr: false,
 			Timeout:      1 * time.Second,
 			Path:         filepath.Join(testDirectory, "cmd/test_int_no_err.sh"),
+			Logger:       zLogger,
 		}
 		process := system.NewWrapperHandler(wrapperConfiguration)
 		wrapperData, wrapperDone := process.Start(ctx)
@@ -349,7 +352,7 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelServer := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 10*time.Minute)
+		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 10*time.Minute, zLogger)
 		updateReady, updateAlive, serverDone := server.Start(ctx)
 
 		ctx, cancelWrapper := context.WithCancel(context.Background())
@@ -362,6 +365,7 @@ func Test_runner_wait(t *testing.T) {
 			FailOnStdErr: false,
 			Timeout:      1 * time.Second,
 			Path:         filepath.Join(testDirectory, "cmd/error_10_int_no_err.sh"),
+			Logger:       zLogger,
 		}
 		process := system.NewWrapperHandler(wrapperConfiguration)
 		wrapperData, wrapperDone := process.Start(ctx)
@@ -434,7 +438,7 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelFuncHttp := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 10*time.Minute)
+		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 10*time.Minute, zLogger)
 		updateReady, updateAlive, serverDone := server.Start(ctx)
 
 		ctx, cancelFuncProcess := context.WithCancel(context.Background())
@@ -447,6 +451,7 @@ func Test_runner_wait(t *testing.T) {
 			FailOnStdErr: false,
 			Timeout:      1 * time.Second,
 			Path:         filepath.Join(testDirectory, "cmd/error_10_int_no_err.sh"),
+			Logger:       zLogger,
 		}
 		process := system.NewWrapperHandler(wrapperConfiguration)
 		wrapperData, wrapperDone := process.Start(ctx)
@@ -558,7 +563,7 @@ func Test_runner_wait(t *testing.T) {
 		ctx, cancelFuncHttp := context.WithCancel(context.Background())
 
 		// create the http server
-		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 50*time.Millisecond)
+		server := myHttp.NewServer("127.0.0.1:6060", 15*time.Second, 50*time.Millisecond, zLogger)
 		updateReady, updateAlive, serverDone := server.Start(ctx)
 
 		ctx, cancelFuncProcess := context.WithCancel(context.Background())
@@ -571,6 +576,7 @@ func Test_runner_wait(t *testing.T) {
 			FailOnStdErr: false,
 			Timeout:      1 * time.Second,
 			Path:         filepath.Join(testDirectory, "cmd/test_int_no_err.sh"),
+			Logger:       zLogger,
 		}
 		process := system.NewWrapperHandler(wrapperConfiguration)
 		wrapperData, wrapperDone := process.Start(ctx)

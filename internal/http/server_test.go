@@ -2,19 +2,22 @@ package http
 
 import (
 	"context"
-	"github.com/gandalfmagic/liveness-wrapper/pkg/logger"
 	"net/http"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/gandalfmagic/liveness-wrapper/pkg/logger"
 )
 
 func Test_server_do(t *testing.T) {
+	zLogger, _ := logger.NewLogger(os.Stdout, "test", "info")
+
 	t.Run("With_Timeout", func(t *testing.T) {
 		// mock the server shutdown function
 		// the mocked version closes a channel when it's called
 		oldHttpServerShutdown := httpServerShutdown
-		httpServerShutdown = func(context.Context, *http.Server, time.Duration) {}
+		httpServerShutdown = func(context.Context, *http.Server, time.Duration, *logger.Logger) {}
 
 		// create the context
 		ctx, cancel := context.WithCancel(context.Background())
@@ -25,6 +28,7 @@ func Test_server_do(t *testing.T) {
 			pingInterval:  100 * time.Millisecond,
 			updateReady:   make(chan bool),
 			server:        nil,
+			logger:        zLogger,
 		}
 		serverError := make(chan error)
 		serverDone := make(chan struct{})
@@ -118,7 +122,7 @@ func Test_server_do(t *testing.T) {
 		// mock the server shutdown function
 		// the mocked version closes a channel when it's called
 		oldHttpServerShutdown := httpServerShutdown
-		httpServerShutdown = func(context.Context, *http.Server, time.Duration) {}
+		httpServerShutdown = func(context.Context, *http.Server, time.Duration, *logger.Logger) {}
 
 		// create the context
 		ctx, cancel := context.WithCancel(context.Background())
@@ -129,6 +133,7 @@ func Test_server_do(t *testing.T) {
 			pingInterval:  0,
 			updateReady:   make(chan bool),
 			server:        nil,
+			logger:        zLogger,
 		}
 		serverError := make(chan error)
 		serverDone := make(chan struct{})
@@ -221,20 +226,20 @@ func Test_server_do(t *testing.T) {
 
 func TestServer(t *testing.T) {
 	t.Run("Graceful_shutdown", func(t *testing.T) {
-		logger.Configure(os.Stdout, "test", "ERROR")
+		zLogger, _ := logger.NewLogger(os.Stdout, "test", "error")
 		ctx, cancel := context.WithCancel(context.Background())
-		server := NewServer("127.0.0.1:6060", 15*time.Second, 100*time.Millisecond)
+		server := NewServer("127.0.0.1:6060", 15*time.Second, 100*time.Millisecond, zLogger)
 		_, _, serverDone := server.Start(ctx)
 		cancel()
 		<-serverDone
 	})
 	t.Run("Port_conflict", func(t *testing.T) {
-		logger.Configure(os.Stdout, "test", "ERROR")
+		zLogger, _ := logger.NewLogger(os.Stdout, "test", "error")
 		ctx, cancel := context.WithCancel(context.Background())
-		server := NewServer("127.0.0.1:6060", 15*time.Second, 100*time.Millisecond)
+		server := NewServer("127.0.0.1:6060", 15*time.Second, 100*time.Millisecond, zLogger)
 		_, _, serverDone := server.Start(ctx)
 
-		server2 := NewServer("127.0.0.1:6060", 15*time.Second, 200*time.Millisecond)
+		server2 := NewServer("127.0.0.1:6060", 15*time.Second, 200*time.Millisecond, zLogger)
 		_, _, server2Done := server2.Start(ctx)
 		<-server2Done
 

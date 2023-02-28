@@ -20,7 +20,6 @@ func TestConfigure(t *testing.T) {
 		level  string
 	}
 	type want struct {
-		level  int
 		prefix string
 	}
 	tests := []struct {
@@ -36,7 +35,6 @@ func TestConfigure(t *testing.T) {
 			},
 			want: want{
 				prefix: "",
-				level:  0,
 			},
 		},
 		{
@@ -47,7 +45,6 @@ func TestConfigure(t *testing.T) {
 			},
 			want: want{
 				prefix: "",
-				level:  4,
 			},
 		},
 		{
@@ -58,7 +55,6 @@ func TestConfigure(t *testing.T) {
 			},
 			want: want{
 				prefix: "[prefix]",
-				level:  0,
 			},
 		},
 	}
@@ -66,18 +62,14 @@ func TestConfigure(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var buf testWriter
-			Configure(&buf, tt.args.prefix, tt.args.level)
+			l, _ := NewLogger(&buf, tt.args.prefix, tt.args.level)
 
-			if got := defaultLogger.GetLevel(); got != tt.want.level {
-				t.Errorf("Configure expected level: %v, got %v", tt.want.level, got)
-			}
-
-			Infof("test")
+			l.Infof("test")
 			if !strings.Contains(buf.String(), tt.want.prefix) {
 				t.Errorf("Configure expected prefix: %v, got %v", tt.want.prefix, buf.String())
 			}
 
-			defaultLogger = nil
+			l.Close()
 		})
 	}
 }
