@@ -7,54 +7,6 @@ on:
 
 jobs:
 
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    steps:
-
-      - name: Set up Go 1.20
-        uses: actions/setup-go@v3
-        with:
-          go-version: 1.20.1
-        id: go
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v3
-
-      - name: Get dependencies
-        run: |
-          if [ ! -d vendor ]; then
-              go get -v -t -d ./...
-          fi
-          if [ -f Gopkg.toml ]; then
-              curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-              dep ensure
-          fi
-
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          # Required: the version of golangci-lint is required and must be specified
-          # without patch version: we always use the latest patch version.
-          version: v1.51.2
-
-      - name: Test
-        run: go test -v -race -covermode=atomic -coverprofile=coverage.out ./...
-      - name: Convert coverage to lcov
-        uses: jandelgado/gcov2lcov-action@v1.0.9
-        with:
-          infile: coverage.out
-          outfile: coverage.lcov
-      - name: Coveralls
-        uses: coverallsapp/github-action@v1.2.3
-        with:
-          github-token: ${{ secrets.github_token }}
-          path-to-lcov: coverage.lcov
-
-      - name: Build
-        run: |
-          make
-
   package:
     name: Packaging
     runs-on: ubuntu-latest
@@ -72,6 +24,7 @@ jobs:
       - name: Create packages
         id: create-packages
         run: |
+          git fetch --all --tags
           make package
           echo "##[set-output name=amd64;]$(ls -1 *-amd64.tar.gz)"
           echo "##[set-output name=arm;]$(ls -1 *-arm.tar.gz)"
