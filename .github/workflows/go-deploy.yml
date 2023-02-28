@@ -24,7 +24,7 @@ jobs:
       - name: Create packages
         id: create-packages
         run: |
-          git fetch --all --tags
+          git fetch --all --tags --force
           make package
           echo "##[set-output name=amd64;]$(ls -1 *-amd64.tar.gz)"
           echo "##[set-output name=arm;]$(ls -1 *-arm.tar.gz)"
